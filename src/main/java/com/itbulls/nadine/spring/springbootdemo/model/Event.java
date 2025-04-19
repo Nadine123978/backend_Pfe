@@ -3,22 +3,35 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "event") // اسم الجدول حسب الصورة
+@Table(name = "event")
 public class Event {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long categoryid;
-    private String eventname;
+    private String title;
+    
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false) // يربط مع جدول Category
+    private Category category;
+    
+    private String status;
+    
+    @ManyToOne
+    @JoinColumn(name = "location_id", nullable = false) // يربط مع جدول Location
+    private Location location;
+    
+    private String date;
+    
+    private Integer totalTickets;
+    private Integer soldTickets;
+    private Double price;
+    private String imageUrl;
     private String description;
-    private Long locationid;
-    private String eventdate;
-    private Integer totaltickets;
-    private Integer soldtickets;
 
-    // Getters and setters
+    // Getters & Setters
+
     public Long getId() {
         return id;
     }
@@ -27,20 +40,76 @@ public class Event {
         this.id = id;
     }
 
-    public Long getCategoryid() {
-        return categoryid;
+    public String getTitle() {
+        return title;
     }
 
-    public void setCategoryid(Long categoryid) {
-        this.categoryid = categoryid;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public String getEventname() {
-        return eventname;
+    public Category getCategory() {
+        return category;
     }
 
-    public void setEventname(String eventname) {
-        this.eventname = eventname;
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public Integer getTotalTickets() {
+        return totalTickets;
+    }
+
+    public void setTotalTickets(Integer totalTickets) {
+        this.totalTickets = totalTickets;
+    }
+
+    public Integer getSoldTickets() {
+        return soldTickets;
+    }
+
+    public void setSoldTickets(Integer soldTickets) {
+        this.soldTickets = soldTickets;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public String getDescription() {
@@ -49,37 +118,5 @@ public class Event {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Long getLocationid() {
-        return locationid;
-    }
-
-    public void setLocationid(Long locationid) {
-        this.locationid = locationid;
-    }
-
-    public String getEventdate() {
-        return eventdate;
-    }
-
-    public void setEventdate(String eventdate) {
-        this.eventdate = eventdate;
-    }
-
-    public Integer getTotaltickets() {
-        return totaltickets;
-    }
-
-    public void setTotaltickets(Integer totaltickets) {
-        this.totaltickets = totaltickets;
-    }
-
-    public Integer getSoldtickets() {
-        return soldtickets;
-    }
-
-    public void setSoldtickets(Integer soldtickets) {
-        this.soldtickets = soldtickets;
     }
 }
