@@ -9,24 +9,32 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:3000") // لربط React
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @GetMapping
-    public List<User> getAll() {
-        return userService.getAll();
+    // إنشاء مستخدم جديد
+    @PostMapping("/create")
+    public User createUser(@RequestBody User user) {
+        return userService.createUser(user);
     }
 
-    @PostMapping
-    public User create(@RequestBody User user) {
-        return userService.create(user);
+    // الحصول على مستخدم حسب الـ ID
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable Long id) {
+        return userService.getUserById(id);
     }
 
+    // الحصول على مستخدم حسب البريد الإلكتروني
+    @GetMapping("/email/{email}")
+    public User getUserByEmail(@PathVariable String email) {
+        return userService.getUserByEmail(email);
+    }
+
+    // حذف مستخدم
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        userService.delete(id);
+    public void deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
     }
 }

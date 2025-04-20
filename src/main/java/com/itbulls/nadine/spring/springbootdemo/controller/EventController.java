@@ -23,7 +23,7 @@ import java.nio.file.Files;
 
 import java.util.List;
 import java.util.UUID;
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5174")
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
@@ -126,5 +126,11 @@ public class EventController {
 
         return ResponseEntity.ok(events);
     }
+    @GetMapping("/search")
+    public ResponseEntity<List<Event>> searchEvents(@RequestParam("title") String title) {
+        List<Event> events = eventRepository.findByTitleContainingIgnoreCase(title);
+        return ResponseEntity.ok(events);
+    }
+
 
 }

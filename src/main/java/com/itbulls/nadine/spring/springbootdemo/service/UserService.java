@@ -7,21 +7,26 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+
 @Service
 public class UserService {
 
     @Autowired
     private UserRepository userRepository;
 
-    public List<User> getAll() {
-        return userRepository.findAll();
-    }
-
-    public User create(User user) {
+    public User createUser(User user) {
         return userRepository.save(user);
     }
 
-    public void delete(Long id) {
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
 }
