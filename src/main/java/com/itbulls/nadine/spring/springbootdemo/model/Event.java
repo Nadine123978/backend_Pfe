@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime; // إضافة لاستيراد LocalDateTime
 
 @Entity
 @Table(name = "event")
@@ -22,7 +23,7 @@ public class Event {
     @JoinColumn(name = "location_id", nullable = false) // يربط مع جدول Location
     private Location location;
     
-    private String date;
+    private LocalDateTime date; // تغيير نوع الحقل من String إلى LocalDateTime
     
     private Integer totalTickets;
     private Integer soldTickets;
@@ -72,11 +73,11 @@ public class Event {
         this.location = location;
     }
 
-    public String getDate() {
+    public LocalDateTime getDate() { // تغيير getter ليرجع LocalDateTime
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(LocalDateTime date) { // تغيير setter ليتقبل LocalDateTime
         this.date = date;
     }
 

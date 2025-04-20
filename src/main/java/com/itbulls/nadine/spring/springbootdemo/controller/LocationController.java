@@ -5,6 +5,7 @@ import com.itbulls.nadine.spring.springbootdemo.repository.LocationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -21,8 +22,9 @@ public class LocationController {
         return locationRepository.save(location);
     }
 
+    
     @GetMapping
-    public List<Location> getAllLocations() {
-        return locationRepository.findAll();
+    public ResponseEntity<List<Location>> getLocations() {
+        return ResponseEntity.ok(locationRepository.findAll());
     }
 }

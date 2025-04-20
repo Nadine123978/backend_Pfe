@@ -10,20 +10,26 @@ public class Location {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String venueName;   // اسم المكان
-    private String city;        // المدينة
-    private String state;       // الولاية أو المحافظة
-    private String country;     // البلد
-    private String fullAddress; // العنوان الكامل
+    private String venueName;
+    private String city;
+    private String state;
+    private String country;
+    private String fullAddress;
 
-    // --- Getters و Setters ---
+    // ✅ Constructors (optional)
+    public Location() {}
 
-    public Long getId() {
-        return id;
+    public Location(String venueName, String city, String state, String country, String fullAddress) {
+        this.venueName = venueName;
+        this.city = city;
+        this.state = state;
+        this.country = country;
+        this.fullAddress = fullAddress;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    // ✅ Getters & Setters
+    public Long getId() {
+        return id;
     }
 
     public String getVenueName() {
