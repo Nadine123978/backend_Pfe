@@ -113,7 +113,6 @@ public class EventController {
     }
 
 
-
     @GetMapping
     public ResponseEntity<List<Event>> getAllEvents(@RequestParam(required = false) String status) {
         List<Event> events;
@@ -131,6 +130,20 @@ public class EventController {
         List<Event> events = eventRepository.findByTitleContainingIgnoreCase(title);
         return ResponseEntity.ok(events);
     }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
+        // تحقق مما إذا كان الحدث موجودًا في قاعدة البيانات
+        Event event = eventRepository.findById(id).orElse(null);
+        if (event != null) {
+            // إذا كان الحدث موجودًا، احذفه
+            eventRepository.delete(event);
+            return ResponseEntity.noContent().build(); // 204 No Content
+        } else {
+            return ResponseEntity.notFound().build(); // 404 Not Found
+        }
+    }
+
 
 
 }
