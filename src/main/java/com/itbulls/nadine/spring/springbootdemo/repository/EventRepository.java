@@ -9,5 +9,7 @@ import com.itbulls.nadine.spring.springbootdemo.model.Event;
 public interface EventRepository extends JpaRepository<Event, Long> {
     
     // Add this method
-    List<Event> findByStatusIgnoreCase(String status);
+	List<Event> findByStatusIgnoreCase(String status);
+	  long countByStatus(String status);
+
 }

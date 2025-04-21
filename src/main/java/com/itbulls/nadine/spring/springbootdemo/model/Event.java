@@ -23,13 +23,32 @@ public class Event {
     @JoinColumn(name = "location_id", nullable = false) // يربط مع جدول Location
     private Location location;
     
-    private LocalDateTime date; // تغيير نوع الحقل من String إلى LocalDateTime
+    private LocalDateTime startDate;  // تاريخ بدء الحدث
+    private LocalDateTime endDate;    // تاريخ انتهاء الحدث
     
     private Integer totalTickets;
     private Integer soldTickets;
     private Double price;
     private String imageUrl;
     private String description;
+    
+    @PrePersist
+    public void setStatus() {
+        // تحديد الحالة استنادًا إلى تاريخ البدء والانتهاء
+        if (startDate != null && endDate != null) {
+            if (startDate.isAfter(LocalDateTime.now())) {
+                this.status = "upcoming";  // الحدث لم يبدأ بعد
+            } else if (endDate.isBefore(LocalDateTime.now())) {
+                this.status = "past";      // الحدث قد انتهى
+            } else {
+                this.status = "active";    // الحدث نشط حاليًا
+            }
+        } else {
+            this.status = "draft";  // لو مافي تاريخ مخصص، خليه draft
+        }
+    }
+
+
 
     // Getters & Setters
 
@@ -73,12 +92,21 @@ public class Event {
         this.location = location;
     }
 
-    public LocalDateTime getDate() { // تغيير getter ليرجع LocalDateTime
-        return date;
+    public LocalDateTime getStartDate() {
+        return startDate;
     }
 
-    public void setDate(LocalDateTime date) { // تغيير setter ليتقبل LocalDateTime
-        this.date = date;
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
+    }
+
+    // Getter و Setter لـ endDate
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
     }
 
     public Integer getTotalTickets() {
