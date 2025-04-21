@@ -2,8 +2,8 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 
 import jakarta.persistence.*;
 
-
 @Entity
+@Table(name = "users")
 public class User {
     
     @Id
@@ -14,13 +14,17 @@ public class User {
     private String email;
     private String password;
 
-    // Constructors, getters, setters
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    private Group group;
+
     public User() {}
 
-    public User(String username, String email, String password) {
+    public User(String username, String email, String password, Group group) {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.group = group;
     }
 
     public Long getId() {
@@ -53,5 +57,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Group getGroup() {
+        return group;
+    }
+
+    public void setGroup(Group group) {
+        this.group = group;
     }
 }

@@ -11,5 +11,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     // Add this method
 	List<Event> findByStatusIgnoreCase(String status);
 	  long countByStatus(String status);
+	  
+	  List<Event> findByTitleContainingIgnoreCase(String title); // 🔍 هاي اللي ناقصة
 
 }

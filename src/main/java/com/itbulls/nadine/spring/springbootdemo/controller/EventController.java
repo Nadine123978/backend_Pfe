@@ -94,8 +94,21 @@ public class EventController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
         LocalDateTime startDateTime = LocalDateTime.parse(startDate, formatter);
         event.setStartDate(startDateTime);
-        String imageUrl = "/uploads/" + file.getOriginalFilename();
+     // إنشاء مجلد الصور إذا مش موجود
+        Path uploadDir = Paths.get("uploads");
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
+        }
+
+        // احفظ الصورة فعلياً
+        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        Path filePath = uploadDir.resolve(fileName);
+        Files.write(filePath, file.getBytes());
+
+        // عيّن المسار الكامل للرابط يلي بيتعرض بالواجهة
+        String imageUrl = "http://localhost:8081/uploads/" + fileName;
         event.setImageUrl(imageUrl);
+
 
 
         Category category = categoryRepository.findById(categoryId).orElse(null);
