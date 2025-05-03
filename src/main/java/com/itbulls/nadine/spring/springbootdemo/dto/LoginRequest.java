@@ -1,27 +1,17 @@
 package com.itbulls.nadine.spring.springbootdemo.dto;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotEmpty;
-
 public class LoginRequest {
-
-    @NotEmpty(message = "Email is required")
-    @Email(message = "Invalid email format")
     private String email;
-
-    @NotEmpty(message = "Password is required")
     private String password;
 
-    // Constructor without parameters
     public LoginRequest() {}
 
-    // Getters and Setters
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setEmail(String username) {
+        this.email = username;
     }
 
     public String getPassword() {
