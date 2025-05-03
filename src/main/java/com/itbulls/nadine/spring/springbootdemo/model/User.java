@@ -1,12 +1,18 @@
 package com.itbulls.nadine.spring.springbootdemo.model;
 
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
 
 @Entity
 @Table(name = "users")
@@ -37,6 +43,10 @@ public class User {
 
     @Column(name = "reset_password_token_expiration")
     private Long resetPasswordTokenExpiration;
+
+    // إذا كنت بحاجة إلى إضافة resetToken
+    @Column(name = "reset_token")
+    private String resetToken;  // الحقل الجديد
 
     // Constructor with encrypted password
     public User(String username, String email, String password, Group group) {
@@ -82,7 +92,6 @@ public class User {
         this.password = password;
     }
 
-
     public Group getGroup() {
         return group;
     }
@@ -105,5 +114,13 @@ public class User {
 
     public void setResetPasswordTokenExpiration(long resetPasswordTokenExpiration) {
         this.resetPasswordTokenExpiration = resetPasswordTokenExpiration;
+    }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
     }
 }
