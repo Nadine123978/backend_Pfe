@@ -20,7 +20,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:5174" })
+@CrossOrigin(origins = "*")
+
+
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
