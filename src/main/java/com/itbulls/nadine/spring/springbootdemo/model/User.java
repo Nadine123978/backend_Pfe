@@ -36,7 +36,7 @@ public class User {
     private String resetPasswordToken;
 
     @Column(name = "reset_password_token_expiration")
-    private long resetPasswordTokenExpiration;
+    private Long resetPasswordTokenExpiration;
 
     // Constructor with encrypted password
     public User(String username, String email, String password, Group group) {
@@ -79,9 +79,9 @@ public class User {
     }
 
     public void setPassword(String password) {
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        this.password = passwordEncoder.encode(password);
+        this.password = password;
     }
+
 
     public Group getGroup() {
         return group;

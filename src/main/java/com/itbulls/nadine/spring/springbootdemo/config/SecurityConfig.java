@@ -40,17 +40,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of(
-            "http://localhost:5173",   // React App port
-            "http://localhost:5174"    // Frontend URL
-        ));
-        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        cfg.addAllowedOrigin("http://localhost:5173");
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("*"));
-        cfg.setAllowCredentials(true);  // السماح بالكوكيز أو التوكنات
+        cfg.setAllowCredentials(true);
+
+        System.out.println("✅ CORS configuration loaded");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;
     }
+
+
 
 }

@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.service;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Group;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.repository.GroupRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
@@ -26,6 +27,8 @@ public class UserService {
 
         // ربط المستخدم بهيدي المجموعة
         user.setGroup(defaultGroup);
+        user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
+
 
         // حفظ المستخدم
         return userRepository.save(user);
@@ -36,7 +39,7 @@ public class UserService {
     }
 
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+    	return userRepository.findByEmail(email).orElse(null);
     }
 
     public void deleteUser(Long id) {

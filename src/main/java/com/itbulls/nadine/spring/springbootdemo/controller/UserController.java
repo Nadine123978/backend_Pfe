@@ -60,7 +60,7 @@ public class UserController {
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest request) {
         Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
 
-        if (optionalUser.isEmpty() || !request.getPassword().equals(optionalUser.get().getPassword())) {
+        if (optionalUser.isEmpty() || !BCrypt.checkpw(request.getPassword(), optionalUser.get().getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                                  .body(Map.of("message", "Invalid credentials"));
         }
