@@ -1,7 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime; // إضافة لاستيراد LocalDateTime
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "event")
@@ -12,43 +12,43 @@ public class Event {
     private Long id;
 
     private String title;
-    
+
     @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false) // يربط مع جدول Category
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
-    
+
     private String status;
-    
+
     @ManyToOne
-    @JoinColumn(name = "location_id", nullable = false) // يربط مع جدول Location
+    @JoinColumn(name = "location_id", nullable = false)
     private Location location;
-    
-    private LocalDateTime startDate;  // تاريخ بدء الحدث
-    private LocalDateTime endDate;    // تاريخ انتهاء الحدث
-    
+
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+
     private Integer totalTickets;
     private Integer soldTickets;
     private Double price;
     private String imageUrl;
     private String description;
-    
+
+    @Column(name = "is_featured")
+    private Boolean isFeatured = false;
+
     @PrePersist
     public void setStatus() {
-        // تحديد الحالة استنادًا إلى تاريخ البدء والانتهاء
         if (startDate != null && endDate != null) {
             if (startDate.isAfter(LocalDateTime.now())) {
-                this.status = "upcoming";  // الحدث لم يبدأ بعد
+                this.status = "upcoming";
             } else if (endDate.isBefore(LocalDateTime.now())) {
-                this.status = "past";      // الحدث قد انتهى
+                this.status = "past";
             } else {
-                this.status = "active";    // الحدث نشط حاليًا
+                this.status = "active";
             }
         } else {
-            this.status = "draft";  // لو مافي تاريخ مخصص، خليه draft
+            this.status = "draft";
         }
     }
-
-
 
     // Getters & Setters
 
@@ -100,7 +100,6 @@ public class Event {
         this.startDate = startDate;
     }
 
-    // Getter و Setter لـ endDate
     public LocalDateTime getEndDate() {
         return endDate;
     }
@@ -147,5 +146,13 @@ public class Event {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean getIsFeatured() {
+        return isFeatured;
+    }
+
+    public void setIsFeatured(Boolean isFeatured) {
+        this.isFeatured = isFeatured;
     }
 }

@@ -4,5 +4,5 @@ import com.itbulls.nadine.spring.springbootdemo.model.Group;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GroupRepository extends JpaRepository<Group, Long> {
-    Group findByName(String name);
+    Group findByName(String name); // هيدا اختياري إذا بدك تبحث بالإسم
 }

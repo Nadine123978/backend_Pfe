@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-@CrossOrigin(origins = "http://localhost:5174")
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:5174" })
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
@@ -34,26 +34,6 @@ public class EventController {
     @Autowired
     private LocationRepository locationRepository;
 
-    @PostMapping
-    public ResponseEntity<?> createEvent(@RequestBody Event event) {
-        if (event.getCategory() == null || event.getLocation() == null) {
-            return ResponseEntity.badRequest().body("Category and Location are required.");
-        }
-
-        Category category = categoryRepository.findById(event.getCategory().getId()).orElse(null);
-        Location location = locationRepository.findById(event.getLocation().getId()).orElse(null);
-
-        if (category == null || location == null) {
-            return ResponseEntity.badRequest().body("Invalid category or location ID.");
-        }
-
-        event.setCategory(category);
-        event.setLocation(location);
-        Event savedEvent = eventRepository.save(event);
-
-        return ResponseEntity.ok(savedEvent);
-    }
-
     @PostMapping("/upload")
     public ResponseEntity<Event> createEvent(
         @RequestParam String title,
@@ -66,10 +46,9 @@ public class EventController {
         @RequestParam Long categoryId,
         @RequestParam Long locationId,
         @RequestParam(required = false) MultipartFile image,
-        @RequestParam String startDate ,
-        @RequestParam("file") MultipartFile file
-// لازم تكون معرفها بهالطريقة
-
+        @RequestParam String startDate,
+        @RequestParam("file") MultipartFile file,
+        @RequestParam(required = false) boolean isFeatured // إضافة isFeatured هنا
     ) throws IOException {
 
         // إذا ما كان status موجود، نحدده كـ "draft" افتراضيًا
@@ -94,7 +73,11 @@ public class EventController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
         LocalDateTime startDateTime = LocalDateTime.parse(startDate, formatter);
         event.setStartDate(startDateTime);
-     // إنشاء مجلد الصور إذا مش موجود
+
+        // تعيين قيمة isFeatured
+        event.setIsFeatured(isFeatured);
+
+        // إنشاء مجلد الصور إذا مش موجود
         Path uploadDir = Paths.get("uploads");
         if (!Files.exists(uploadDir)) {
             Files.createDirectories(uploadDir);
@@ -109,8 +92,6 @@ public class EventController {
         String imageUrl = "http://localhost:8081/uploads/" + fileName;
         event.setImageUrl(imageUrl);
 
-
-
         Category category = categoryRepository.findById(categoryId).orElse(null);
         Location location = locationRepository.findById(locationId).orElse(null);
 
@@ -122,34 +103,6 @@ public class EventController {
         }
 
         return ResponseEntity.ok(eventRepository.save(event));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Event>> getAllEvents(@RequestParam(required = false) String status) {
-        List<Event> events;
-        if (status != null) {
-            events = eventRepository.findByStatusIgnoreCase(status);
-        } else {
-            events = eventRepository.findAll();
-        }
-        return ResponseEntity.ok(events);
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<Event>> searchEvents(@RequestParam("title") String title) {
-        List<Event> events = eventRepository.findByTitleContainingIgnoreCase(title);
-        return ResponseEntity.ok(events);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
-        Event event = eventRepository.findById(id).orElse(null);
-        if (event != null) {
-            eventRepository.delete(event);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
     }
 
     @PutMapping("/{id}")
@@ -200,6 +153,10 @@ public class EventController {
                     locationRepository.findById(locationId).ifPresent(event::setLocation);
                 }
 
+                if (updates.containsKey("isFeatured")) {
+                    event.setIsFeatured(Boolean.parseBoolean(updates.get("isFeatured").toString())); // تعيين isFeatured
+                }
+
                 Event updated = eventRepository.save(event);
                 return ResponseEntity.ok(updated);
 
@@ -209,17 +166,30 @@ public class EventController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/featured")
+    public List<Event> getFeaturedEvents() {
+        return eventRepository.findByIsFeaturedTrue(); // إرجاع الأحداث المميزة فقط
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
+        return eventRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    @CrossOrigin(origins = "http://localhost:5174")
     @GetMapping("/by-status")
-    public ResponseEntity<List<Event>> getEventsByStatus(@RequestParam(required = false) String status) {
+    public ResponseEntity<List<Event>> getEventsByStatus(@RequestParam(required = false) List<String> status) {
         List<Event> events;
-        if (status != null) {
-            events = eventRepository.findByStatusIgnoreCase(status);
+        if (status != null && !status.isEmpty()) {
+            events = eventRepository.findByStatusInIgnoreCase(status); // استخدم findByStatusInIgnoreCase لجلب الحالات المتعددة
         } else {
             events = eventRepository.findAll();
         }
         return ResponseEntity.ok(events);
     }
 
+    
     @GetMapping("/count")
     public Map<String, Long> getEventCounts() {
         Map<String, Long> eventCounts = new HashMap<>();
@@ -228,7 +198,6 @@ public class EventController {
         eventCounts.put("past", eventRepository.countByStatus("past"));
         return eventCounts;
     }
-    
     @PutMapping("/update-status/{id}")
     public ResponseEntity<Event> updateEventStatus(@PathVariable Long id) {
         Event event = eventRepository.findById(id).orElse(null);
@@ -248,5 +217,6 @@ public class EventController {
         eventRepository.save(event);
         return ResponseEntity.ok(event);
     }
+    
 
 }

@@ -3,17 +3,16 @@ package com.itbulls.nadine.spring.springbootdemo.dto;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
 
-public class LoginRequest {
+public class PasswordResetRequest {
 
     @NotEmpty(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotEmpty(message = "Password is required")
-    private String password;
-
-    // Constructor without parameters
-    public LoginRequest() {}
+    // Constructor
+    public PasswordResetRequest(String email) {
+        this.email = email;
+    }
 
     // Getters and Setters
     public String getEmail() {
@@ -22,13 +21,5 @@ public class LoginRequest {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 }
