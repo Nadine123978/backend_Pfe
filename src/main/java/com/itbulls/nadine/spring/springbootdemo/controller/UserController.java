@@ -57,6 +57,9 @@ public class UserController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("email", user.getEmail());
+        
+        // إضافة الـ userId للاستجابة
+        response.put("userId", user.getId()); // إضافة الـ userId
 
         // التحقق من المجموعة (group) الخاصة بالمستخدم
         String group = (user.getGroup() != null && user.getGroup().getName() != null) ? user.getGroup().getName() : "user"; // افتراضياً "user"
