@@ -24,6 +24,9 @@ public class PasswordResetToken {
         this.email = email;
         this.expiryDate = expiryDate;
     }
+    public PasswordResetToken() {
+        // مطلوب من JPA constructor فاضي
+    }
 
     // Getters and Setters
     public Long getId() {

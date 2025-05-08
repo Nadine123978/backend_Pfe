@@ -31,5 +31,18 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired token");
         }
     }
+    
+    @PostMapping("/request-reset-password")
+    public ResponseEntity<String> requestResetPassword(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+
+        boolean result = resetService.createAndSendResetToken(email);
+        if (result) {
+            return ResponseEntity.ok("Password reset link has been sent");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found");
+        }
+    }
+
 }
 
