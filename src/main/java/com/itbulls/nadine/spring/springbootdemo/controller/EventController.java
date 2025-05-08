@@ -22,7 +22,6 @@ import java.util.*;
 
 @CrossOrigin(origins = "*")
 
-
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
