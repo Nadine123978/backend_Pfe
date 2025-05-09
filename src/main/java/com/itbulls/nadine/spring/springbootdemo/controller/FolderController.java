@@ -14,7 +14,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/gallery/folder")
+@RequestMapping("/api/folder")
 @CrossOrigin(origins = {"http://localhost:5174", "http://localhost:5173"})
 public class FolderController {
 
@@ -39,7 +39,7 @@ public class FolderController {
 
 
     // Endpoint للحصول على جميع الفولدرات
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<Folder>> getAllFolders() {
         try {
             List<Folder> folders = folderRepository.findAll();
