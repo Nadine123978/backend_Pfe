@@ -6,6 +6,7 @@ import com.itbulls.nadine.spring.springbootdemo.model.Location;
 import com.itbulls.nadine.spring.springbootdemo.repository.CategoryRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.LocationRepository;
+import com.itbulls.nadine.spring.springbootdemo.service.EventService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,15 @@ public class EventController {
 
     @Autowired
     private LocationRepository locationRepository;
+    
+    private final EventService eventService;
+    public EventController(EventService eventService) {
+        this.eventService = eventService;
+    }
+
+    // Constructor Injection (أفضل ممارسة)
+
+    
 
     @PostMapping("/upload")
     public ResponseEntity<Event> createEvent(
@@ -172,12 +182,11 @@ public class EventController {
         return eventRepository.findByIsFeaturedTrue(); // إرجاع الأحداث المميزة فقط
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
-        return eventRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/events/id/{id}")
+    public Event getEventById(@PathVariable Long id) {
+        return eventService.getEventById(id);
     }
+
     @CrossOrigin(origins = "http://localhost:5174")
     @GetMapping("/by-status")
     public ResponseEntity<List<Event>> getEventsByStatus(@RequestParam(required = false) List<String> status) {
@@ -218,6 +227,13 @@ public class EventController {
         eventRepository.save(event);
         return ResponseEntity.ok(event);
     }
+  
+    @GetMapping("/no-folders")
+    public List<Event> getEventsWithoutFolders() {
+        return eventService.getEventsWithoutFolders();
+    }
+    
+
     
 
 }

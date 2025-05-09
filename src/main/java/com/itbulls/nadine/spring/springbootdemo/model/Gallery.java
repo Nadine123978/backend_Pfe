@@ -2,13 +2,7 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 
 import java.time.LocalDate;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "gallery")
@@ -25,6 +19,10 @@ public class Gallery {
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
+
+    @ManyToOne
+    @JoinColumn(name = "folder_id")
+    private Folder folder;
 
     private LocalDate uploadDate;
 
@@ -60,6 +58,14 @@ public class Gallery {
 
     public void setEvent(Event event) {
         this.event = event;
+    }
+
+    public Folder getFolder() {
+        return folder;
+    }
+
+    public void setFolder(Folder folder) {
+        this.folder = folder;
     }
 
     public LocalDate getUploadDate() {
