@@ -1,6 +1,9 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import com.itbulls.nadine.spring.springbootdemo.model.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
@@ -16,7 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = {"http://localhost:5174", "http://localhost:5173"})
+@CrossOrigin(origins = {"http://localhost:5174", "http://localhost:5173"}, allowCredentials = "true")
 
 public class UserController {
 
@@ -67,5 +70,16 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/logout")
+    public ResponseEntity<?> logoutUser(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate(); // إنهاء الجلسة إذا كانت موجودة
+        }
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Logged out successfully");
+        return ResponseEntity.ok(response);
+    }
+
 
 }
