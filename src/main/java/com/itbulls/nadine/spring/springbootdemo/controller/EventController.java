@@ -182,10 +182,16 @@ public class EventController {
         return eventRepository.findByIsFeaturedTrue(); // إرجاع الأحداث المميزة فقط
     }
 
-    @GetMapping("/events/id/{id}")
-    public Event getEventById(@PathVariable Long id) {
-        return eventService.getEventById(id);
+    @GetMapping("/{id}")
+    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
+        Event event = eventService.getEventById(id);
+        if (event != null) {
+            return ResponseEntity.ok(event);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
+
 
     @CrossOrigin(origins = "http://localhost:5174")
     @GetMapping("/by-status")
