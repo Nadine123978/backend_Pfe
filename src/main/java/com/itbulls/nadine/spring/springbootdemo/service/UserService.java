@@ -18,18 +18,35 @@ public class UserService {
     private GroupRepository groupRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder; // ✅ ضروري لتشفير الباسورد
 
     public User createUser(User user) {
+        // جلب المجموعة الافتراضية (ID = 2)
         Group defaultGroup = groupRepository.findById(2L).orElse(null);
         if (defaultGroup == null) {
             throw new RuntimeException("Default group with ID 2 not found!");
         }
 
+        // ربط المستخدم بالمجموعة
         user.setGroup(defaultGroup);
-        user.setPassword(passwordEncoder.encode(user.getPassword())); // ← تشفير الباسورد
-        
+
+        // 🔐 تشفير كلمة المرور قبل الحفظ
+        String hashedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(hashedPassword);
+
+        // حفظ المستخدم في قاعدة البيانات
         return userRepository.save(user);
     }
 
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
 }
