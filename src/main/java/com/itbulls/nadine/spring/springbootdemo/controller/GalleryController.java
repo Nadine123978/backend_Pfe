@@ -1,9 +1,9 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
-
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,21 +24,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.Gallery;
-import com.itbulls.nadine.spring.springbootdemo.model.GalleryRequest;
 import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.GalleryRepository;
 
-import io.jsonwebtoken.lang.Objects;
-import io.micrometer.common.util.StringUtils;
-import jakarta.persistence.criteria.Path;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.ResponseEntity;
+import java.util.Objects;
 
-import java.io.IOException;
-import java.nio.file.*;
-import java.util.*;
 
 
 
