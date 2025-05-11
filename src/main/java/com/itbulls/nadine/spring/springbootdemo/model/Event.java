@@ -3,6 +3,8 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 @Table(name = "event")
 public class Event {
@@ -14,7 +16,8 @@ public class Event {
     private String title;
 
     @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id")
+    @JsonBackReference
     private Category category;
 
     private String status;

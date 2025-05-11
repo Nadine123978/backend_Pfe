@@ -16,6 +16,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 	  
 	  List<Event> findByTitleContainingIgnoreCase(String title); // 🔍 هاي اللي ناقصة
 	  List<Event> findByIsFeaturedTrue();
+	  List<Event> findByCategory_Id(Long categoryId);
 	  
 	   @Query("SELECT e FROM Event e WHERE LOWER(e.status) IN :statuses")
 	    List<Event> findByStatusInIgnoreCase(List<String> statuses);

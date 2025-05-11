@@ -204,6 +204,16 @@ public class EventController {
         }
         return ResponseEntity.ok(events);
     }
+    
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<Event>> getEventsByCategory(@PathVariable Long categoryId) {
+        List<Event> events = eventRepository.findByCategory_Id(categoryId); // استرجاع الأحداث باستخدام categoryId
+        if (events.isEmpty()) {
+            return ResponseEntity.notFound().build(); // إذا لم توجد أحداث
+        }
+        return ResponseEntity.ok(events); // إرجاع الأحداث
+    }
+
 
     
     @GetMapping("/count")
