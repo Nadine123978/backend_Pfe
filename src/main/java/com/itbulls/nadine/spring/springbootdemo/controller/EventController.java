@@ -1,5 +1,6 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
+import com.itbulls.nadine.spring.springbootdemo.dto.TicketSectionDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.Category;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.Location;
@@ -176,6 +177,8 @@ public class EventController {
             }
         }).orElse(ResponseEntity.notFound().build());
     }
+    
+
 
     @GetMapping("/featured")
     public List<Event> getFeaturedEvents() {
