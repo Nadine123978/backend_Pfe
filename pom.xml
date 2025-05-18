@@ -132,6 +132,11 @@
 
 
 
+    	<dependency>
+    		<groupId>com.airport.permit</groupId>
+    		<artifactId>airportpermitbackend</artifactId>
+    		<version>0.0.1-SNAPSHOT</version>
+    	</dependency>
     </dependencies>
 
     <build>

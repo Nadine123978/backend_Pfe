@@ -4,10 +4,12 @@ import com.itbulls.nadine.spring.springbootdemo.dto.TicketSectionDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.Category;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.Location;
+import com.itbulls.nadine.spring.springbootdemo.model.Section;
 import com.itbulls.nadine.spring.springbootdemo.repository.CategoryRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.LocationRepository;
 import com.itbulls.nadine.spring.springbootdemo.service.EventService;
+import com.itbulls.nadine.spring.springbootdemo.repository.SectionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,8 @@ public class EventController {
 
     @Autowired
     private EventRepository eventRepository;
+    @Autowired
+    private SectionRepository sectionRepository;
 
     @Autowired
     private CategoryRepository categoryRepository;
@@ -57,7 +61,6 @@ public class EventController {
         @RequestParam(required = false) String date,  // إذا لم يتم تحديد تاريخ
         @RequestParam Long categoryId,
         @RequestParam Long locationId,
-        @RequestParam(required = false) MultipartFile image,
         @RequestParam String startDate,
         @RequestParam("file") MultipartFile file,
         @RequestParam(required = false) boolean isFeatured // إضافة isFeatured هنا
@@ -183,6 +186,15 @@ public class EventController {
     @GetMapping("/featured")
     public List<Event> getFeaturedEvents() {
         return eventRepository.findByIsFeaturedTrue(); // إرجاع الأحداث المميزة فقط
+    }
+    
+    @GetMapping("/{eventId}/sections")
+    public ResponseEntity<List<Section>> getSectionsByEventId(@PathVariable Long eventId) {
+        List<Section> sections = sectionRepository.findByEventId(eventId);
+        if (sections.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(sections);
     }
 
     @GetMapping("/{id}")

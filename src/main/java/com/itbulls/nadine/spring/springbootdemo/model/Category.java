@@ -3,11 +3,12 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 import jakarta.persistence.*;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "category")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Category {
 
     @Id
@@ -17,16 +18,14 @@ public class Category {
     private String name;
 
     @Column(name = "is_trending")
-    private Boolean isTrending;
+    private Boolean isTrending = false; // ✅ قيمة افتراضية لتجنّب null
 
-    // إضافة العلاقة مع Event
     @OneToMany(mappedBy = "category")
     @JsonManagedReference
     private List<Event> events;
 
-
-
     // Getters & Setters
+
     public Long getId() {
         return id;
     }
@@ -43,15 +42,14 @@ public class Category {
         this.name = name;
     }
 
-    public boolean isTrending() {
+    public Boolean getIsTrending() {
         return isTrending;
     }
 
-    public void setTrending(boolean trending) {
-        isTrending = trending;
+    public void setIsTrending(Boolean isTrending) {
+        this.isTrending = isTrending;
     }
 
-    // إضافة Getter لـ events
     public List<Event> getEvents() {
         return events;
     }

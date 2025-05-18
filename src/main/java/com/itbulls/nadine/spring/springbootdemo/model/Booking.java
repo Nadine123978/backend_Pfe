@@ -6,24 +6,44 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+import com.itbulls.nadine.spring.springbootdemo.model.User;
+import com.itbulls.nadine.spring.springbootdemo.model.Seat;
+
 
 @Entity
+@Table(name = "booking")
 public class Booking {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private LocalDateTime createdAt;
+
+    private String status; // HELD, CONFIRMED, CANCELLED
+
     @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
+    
+    @Column(name = "payment_method")
+    private String paymentMethod;
 
-    @ManyToOne
-    private Event event;
+    @Column(name = "confirmed")
+    private Boolean confirmed = false;
 
-    private LocalDateTime bookingDate;
+    @OneToOne
+    @JoinColumn(name = "seat_id")
+    private Seat seat;
 
-    // ======== Getters and Setters ========
+    private Double price;
+
+    // Getters and Setters
 
     public Long getId() {
         return id;
@@ -31,6 +51,22 @@ public class Booking {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public User getUser() {
@@ -41,19 +77,38 @@ public class Booking {
         this.user = user;
     }
 
-    public Event getEvent() {
-        return event;
+    public Seat getSeat() {
+        return seat;
     }
 
-    public void setEvent(Event event) {
-        this.event = event;
+    public void setSeat(Seat seat) {
+        this.seat = seat;
+    }
+    
+    public String getPaymentMethod() {
+        return paymentMethod;
     }
 
-    public LocalDateTime getBookingDate() {
-        return bookingDate;
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
-    public void setBookingDate(LocalDateTime bookingDate) {
-        this.bookingDate = bookingDate;
+    public Boolean getConfirmed() {
+        return confirmed;
+    }
+
+    public void setConfirmed(Boolean confirmed) {
+        this.confirmed = confirmed;
+    }
+
+
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 }
+
