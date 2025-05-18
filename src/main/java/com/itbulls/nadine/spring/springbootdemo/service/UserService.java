@@ -2,8 +2,12 @@ package com.itbulls.nadine.spring.springbootdemo.service;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Group;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
+import com.itbulls.nadine.spring.springbootdemo.repository.BookingRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.GroupRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,6 +20,9 @@ public class UserService {
 
     @Autowired
     private GroupRepository groupRepository;
+    
+    @Autowired
+    private BookingRepository bookingRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder; // ✅ ضروري لتشفير الباسورد
@@ -38,15 +45,22 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
+    public void deleteUser(Long id) {
+        // حذف الحجوزات المرتبطة بالمستخدم أولاً
+        bookingRepository.deleteByUserId(id);
+
+        // حذف المستخدم بعد حذف الحجوزات
+        userRepository.deleteById(id);
+    } 
+    
     public User getUserById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
+    
 
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
-    }
 }

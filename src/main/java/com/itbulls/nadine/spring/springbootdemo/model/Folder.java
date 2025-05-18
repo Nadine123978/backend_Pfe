@@ -3,7 +3,8 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
+
 
 @Entity
 @Table(name = "folders")

@@ -37,7 +37,7 @@ public class PasswordResetService {
 
         if (resetToken != null && resetToken.getExpiryDate().isAfter(LocalDateTime.now())) {
             User user = userRepo.findByEmail(resetToken.getEmail());
-            user.setPassword(newPassword); // تأكد من تشفير كلمة المرور قبل حفظها
+            user.setPassword(passwordEncoder.encode(newPassword));  // ← هنا
             userRepo.save(user);
             tokenRepo.delete(resetToken); // حذف التوكن بعد الاستخدام
         }
@@ -65,6 +65,12 @@ public class PasswordResetService {
         System.out.println("Reset password link: http://localhost:8081/auth/reset-password?token=" + token);
         return true;
     }
+    
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+  
+
 
 
 }
