@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-         https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -17,18 +16,12 @@
     <artifactId>springbootdemo</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>springbootdemo</name>
-    <description>Demo project for Spring Boot</description>
 
     <properties>
         <java.version>17</java.version>
     </properties>
 
     <dependencies>
-    
-    <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-mail</artifactId>
-</dependency>
 
         <!-- Spring Boot Web Starter -->
         <dependency>
@@ -36,12 +29,10 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Boot DevTools -->
+        <!-- Spring Boot Mail Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
         <!-- Spring Security Starter -->
@@ -50,87 +41,45 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- Spring Boot Starter Data JPA -->
+        <!-- Spring Data JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-        
-        <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
 
-
-        <!-- PostgreSQL Database Driver -->
+        <!-- PostgreSQL Driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.3</version>
         </dependency>
 
-        <!-- Jakarta Mail API (Updated from javax.mail) -->
-        <dependency>
-            <groupId>jakarta.mail</groupId>
-            <artifactId>jakarta.mail-api</artifactId>
-            <version>2.1.0</version> <!-- تأكد من استخدام أحدث إصدار -->
-        </dependency>
-
-        <!-- Spring Boot Starter Validation -->
+        <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        
-        <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-mail</artifactId>
-</dependency>
 
-
-        <!-- Spring Boot Starter Test -->
+        <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
+        <!-- JWT -->
         <dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt</artifactId>
-    <version>0.9.1</version>
-</dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.1</version>
+        </dependency>
 
-<dependency>
-    <groupId>org.mindrot</groupId>
-    <artifactId>jbcrypt</artifactId>
-    <version>0.4</version>
-</dependency>
-
-
-<dependency>
-    <groupId>javax.validation</groupId>
-    <artifactId>validation-api</artifactId>
-    <version>2.0.1.Final</version>
-</dependency>
-
-<dependency>
-    <groupId>org.hibernate</groupId>
-    <artifactId>hibernate-validator</artifactId>
-    <version>6.2.0.Final</version>
-</dependency>
-
-<dependency>
-    <groupId>org.hibernate.validator</groupId>
-    <artifactId>hibernate-validator</artifactId>
-</dependency>
-
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-
-
+        <!-- BCrypt -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
 
     </dependencies>
 
