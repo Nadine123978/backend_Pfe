@@ -30,6 +30,7 @@ public class Booking {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
     
     @Column(name = "payment_method")
     private String paymentMethod;
