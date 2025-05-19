@@ -10,11 +10,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/contact")
-@CrossOrigin(origins = "http://localhost:5173")  // عدل حسب الfrontend port
+@CrossOrigin(origins = {"http://localhost:5174", "http://localhost:5173"})
 public class ContactController {
 
     @Autowired
@@ -75,5 +76,11 @@ public class ContactController {
             return false;
         }
     }
+    @GetMapping("/all")
+    public ResponseEntity<List<ContactMessage>> getAllContacts() {
+        List<ContactMessage> contacts = contactMessageRepository.findAll();
+        return ResponseEntity.ok(contacts);
+    }
+
 
 }
