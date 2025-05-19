@@ -80,14 +80,7 @@
             <artifactId>jbcrypt</artifactId>
             <version>0.4</version>
         </dependency>
-
-        <!-- Custom Airport Permit Module -->
-        <dependency>
-            <groupId>com.airport.permit</groupId>
-            <artifactId>airportpermitbackend</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-
+        
     </dependencies>
 
     <build>
