@@ -2,6 +2,9 @@ package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
+import com.itbulls.nadine.spring.springbootdemo.service.EmailService;
+
+import org.hibernate.validator.internal.util.stereotypes.Lazy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +17,7 @@ import java.util.Optional;
 public class BookingController {
 
     @Autowired
+    @Lazy
     private BookingService bookingService;
 
     // تأكيد الحجز بعد الدفع باستخدام PUT
@@ -52,6 +56,9 @@ public class BookingController {
     }
 
     // تأكيد الحجز بعد الدفع مع تحديد وسيلة الدفع (POST)
+    @Autowired
+    private EmailService emailService;
+
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmBooking(
             @RequestParam Long bookingId,
@@ -69,7 +76,14 @@ public class BookingController {
 
         bookingService.saveBooking(booking);
 
-        return ResponseEntity.ok("Booking confirmed successfully");
+        // ✅ إرسال الإيميل
+        emailService.sendBookingConfirmation(
+            booking.getUser().getEmail(),
+            "تم تأكيد الحجز",
+            "تم حجز المقعد " + booking.getSeat().getCode() + " بنجاح."
+        );
+
+        return ResponseEntity.ok("Booking confirmed successfully and ticket sent to your email.");
     }
 
 }

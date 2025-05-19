@@ -38,7 +38,6 @@ public class FolderController {
     }
 
 
-    // Endpoint للحصول على جميع الفولدرات
     @GetMapping("/all")
     public ResponseEntity<List<Folder>> getAllFolders() {
         try {

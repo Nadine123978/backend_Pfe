@@ -43,6 +43,9 @@ public class Booking {
     private Seat seat;
 
     private Double price;
+    
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 
     // Getters and Setters
 
@@ -102,14 +105,20 @@ public class Booking {
         this.confirmed = confirmed;
     }
 
-
-
     public Double getPrice() {
         return price;
     }
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+    
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(LocalDateTime expiresAt) {
+        this.expiresAt = expiresAt;
     }
 }
 

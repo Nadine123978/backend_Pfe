@@ -10,11 +10,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 	boolean existsBySeat(Seat seat);
     List<Booking> findByUserId(Long userId);
+    List<Booking> findByStatusAndExpiresAtBefore(String status, LocalDateTime now);
+
     
     @Modifying
     @Transactional

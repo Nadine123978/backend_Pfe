@@ -8,15 +8,26 @@ import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
 
 import jakarta.transaction.Transactional;
 
+import org.hibernate.validator.internal.util.stereotypes.Lazy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
 @Service
 public class BookingService {
+
+	    @Autowired
+	    private EmailService emailService; // 👈
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -24,6 +35,7 @@ public class BookingService {
     @Autowired
     private SeatService seatService;
 
+   
     public Booking holdSeat(Seat seat, User user, Double price) {
         seatService.markSeatAsReserved(seat);
         
@@ -35,28 +47,49 @@ public class BookingService {
         booking.setSeat(seat);
         booking.setUser(user);
         booking.setCreatedAt(LocalDateTime.now());
+        booking.setExpiresAt(LocalDateTime.now().plusMinutes(15)); // صلاحية 15 دقيقة
         booking.setStatus("HELD");
         booking.setPrice(price);
+        
+        booking.setExpiresAt(LocalDateTime.now().plusMinutes(10));
 
         return bookingRepository.save(booking);
     }
+   
+ // تأكيد الحجز بعد الدفع مع إرسال الإيميل
 
+    @PostMapping("/confirm")
     @Transactional
-    public Booking confirmBooking(Long bookingId) {
-        Optional<Booking> optionalBooking = bookingRepository.findById(bookingId);
-        if (optionalBooking.isPresent()) {
-            Booking booking = optionalBooking.get();
-            booking.setStatus("CONFIRMED");
-            booking.setConfirmed(true);
-
-            // 🟣 أهم شي هون: تحديث حالة المقعد
-            Seat seat = booking.getSeat();
-            seat.setReserved(true);
-            seatService.saveSeat(seat); // لازم تكون موجودة بـ SeatService
-
-            return bookingRepository.save(booking);
+    public ResponseEntity<?> confirmBooking(
+            @RequestParam Long bookingId,
+            @RequestParam String paymentMethod
+    ) {
+    	Optional<Booking> optionalBooking = getBookingById(bookingId);
+        if (optionalBooking.isEmpty()) {
+            return ResponseEntity.badRequest().body("Booking not found");
         }
-        throw new RuntimeException("Booking not found");
+
+        Booking booking = optionalBooking.get();
+        booking.setConfirmed(true);
+        booking.setPaymentMethod(paymentMethod);
+        booking.setStatus("CONFIRMED");
+
+        saveBooking(booking);
+
+        // إرسال الإيميل
+        String email = booking.getUser().getEmail();
+        String seatCode = booking.getSeat().getCode();
+        String subject = "Booking Confirmation";
+        String body = "Your booking is confirmed. Seat code: " + seatCode;
+
+        emailService.sendBookingConfirmation(email, subject, body);
+
+        return ResponseEntity.ok("Booking confirmed and ticket sent to your email.");
+    }
+
+
+    public List<Booking> getExpiredHeldBookings(LocalDateTime now) {
+        return bookingRepository.findByStatusAndExpiresAtBefore("HELD", now);
     }
 
 
@@ -82,6 +115,17 @@ public class BookingService {
     
     public void saveBooking(Booking booking) {
         bookingRepository.save(booking);
+    }
+    
+    @Scheduled(fixedRate = 60000) // كل دقيقة
+    public void releaseExpiredHolds() {
+        List<Booking> expired = bookingRepository.findByStatusAndExpiresAtBefore("HELD", LocalDateTime.now());
+        
+        for (Booking booking : expired) {
+            booking.setStatus("CANCELLED");
+            seatService.markSeatAsAvailable(booking.getSeat());
+            bookingRepository.save(booking);
+        }
     }
 
 }

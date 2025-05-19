@@ -11,18 +11,16 @@ public class Seat {
 
     private String code;
 
-    private boolean reserved;
-
     @ManyToOne
     @JoinColumn(name = "section_id")
     private Section section;
-    
+
     @OneToOne(mappedBy = "seat")
     private Booking booking;
-    
-    @Column(name = "is_reserved", nullable = false)
-    private boolean isReserved = false; // ✅ لازم يكون في قيمة ابتدائية
 
+    // ❗ نحتفظ بحقل واحد فقط وربطه بالعمود الحقيقي في الـ DB
+    @Column(name = "reserved", nullable = false)
+    private boolean reserved = false;
 
     // Getters & Setters
 
