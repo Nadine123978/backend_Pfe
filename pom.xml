@@ -81,16 +81,12 @@
             <version>0.4</version>
         </dependency>
 
-    	<dependency>
-    		<groupId>com.airport.permit</groupId>
-    		<artifactId>airportpermitbackend</artifactId>
-    		<version>0.0.1-SNAPSHOT</version>
-    	</dependency>
-    	
-    	<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-mail</artifactId>
-</dependency>
+        <!-- Custom Airport Permit Module -->
+        <dependency>
+            <groupId>com.airport.permit</groupId>
+            <artifactId>airportpermitbackend</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
 
     </dependencies>
 
