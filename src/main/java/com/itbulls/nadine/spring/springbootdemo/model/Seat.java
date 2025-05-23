@@ -1,8 +1,13 @@
 package com.itbulls.nadine.spring.springbootdemo.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Seat {
 
     @Id
@@ -13,12 +18,13 @@ public class Seat {
 
     @ManyToOne
     @JoinColumn(name = "section_id")
+    @JsonBackReference // 
     private Section section;
 
     @OneToOne(mappedBy = "seat")
+    @JsonManagedReference
     private Booking booking;
 
-    // ❗ نحتفظ بحقل واحد فقط وربطه بالعمود الحقيقي في الـ DB
     @Column(name = "reserved", nullable = false)
     private boolean reserved = false;
 

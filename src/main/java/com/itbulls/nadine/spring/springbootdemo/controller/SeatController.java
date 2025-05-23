@@ -2,9 +2,11 @@ package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
+import com.itbulls.nadine.spring.springbootdemo.model.Section;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
 import com.itbulls.nadine.spring.springbootdemo.service.SeatService;
+import com.itbulls.nadine.spring.springbootdemo.service.SectionService;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/seats")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173")
 public class SeatController {
 
     @Autowired
@@ -22,6 +24,9 @@ public class SeatController {
 
     @Autowired
     private BookingService bookingService;
+    
+    @Autowired
+    private SectionService sectionService;
 
     @Autowired
     private UserService userService;
@@ -60,5 +65,29 @@ public class SeatController {
         Seat savedSeat = seatService.save(seat);
         return ResponseEntity.ok(savedSeat);
     }
+    
+    @PostMapping("/generate")
+    public ResponseEntity<?> generateSeatsForSection(@RequestParam Long sectionId) {
+        Section section = sectionService.getSectionById(sectionId).orElse(null);
+        if (section == null) {
+            return ResponseEntity.badRequest().body("Section not found");
+        }
+        seatService.generateSeatsForSection(section);
+        return ResponseEntity.ok("Seats generated successfully for section " + section.getName());
+    }
+    
+    @PostMapping("/confirm")
+    public ResponseEntity<?> confirmSeats(@RequestBody List<Long> seatIds) {
+        for (Long id : seatIds) {
+            Seat seat = seatService.getSeatById(id).orElse(null);
+            if (seat != null && !seat.isReserved()) {
+                seat.setReserved(true);
+                seatService.save(seat); // أو seatRepository.save(seat);
+            }
+        }
+        return ResponseEntity.ok("Seats confirmed successfully");
+    }
+
+
 
 }

@@ -1,28 +1,30 @@
-
-//Group.java
 package com.itbulls.nadine.spring.springbootdemo.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
 @Table(name = "groups")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Group {
 
- @Id
- @GeneratedValue(strategy = GenerationType.IDENTITY)
- private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
- private String name;
+    private String name;
 
- @OneToMany(mappedBy = "group")
- private List<User> users;
+    @OneToMany(mappedBy = "group")
+    private List<User> users;
 
- public Group() {}
+    public Group() {}
 
- public Group(String name) {
-     this.name = name;
- }
+    public Group(String name) {
+        this.name = name;
+    }
+
 
  public Long getId() {
      return id;

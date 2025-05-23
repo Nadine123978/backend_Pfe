@@ -2,6 +2,9 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -19,9 +22,11 @@ public class Section {
 
     @ManyToOne
     @JoinColumn(name = "event_id")
+    @JsonBackReference
     private Event event;
 
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Seat> seats;
 
     // Getters & Setters

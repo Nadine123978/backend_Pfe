@@ -22,5 +22,6 @@ public class EventService {
         // بدّك تنفّذ logic بيرجع events يلي ما عندن folders
         return eventRepository.findEventsWithoutFolders();
     }
+   
 }
 

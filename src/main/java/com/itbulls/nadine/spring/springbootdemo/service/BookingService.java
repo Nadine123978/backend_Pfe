@@ -2,9 +2,12 @@ package com.itbulls.nadine.spring.springbootdemo.service;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
+import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.repository.BookingRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
+import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
+import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -126,6 +129,31 @@ public class BookingService {
             seatService.markSeatAsAvailable(booking.getSeat());
             bookingRepository.save(booking);
         }
+    }
+    
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
+
+    public Booking createBooking(Long userId, Long eventId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Event event = eventRepository.findById(eventId)
+            .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        Booking booking = new Booking();
+        booking.setUser(user);
+        booking.setEvent(event);
+        booking.setStatus("PENDING");
+        booking.setConfirmed(false);
+        
+        booking.setCreatedAt(LocalDateTime.now());
+        booking.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+
+        return bookingRepository.save(booking);
     }
 
 }

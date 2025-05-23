@@ -86,4 +86,13 @@ public class BookingController {
         return ResponseEntity.ok("Booking confirmed successfully and ticket sent to your email.");
     }
 
+    @PostMapping("/create")
+    public ResponseEntity<?> createBooking(@RequestParam Long userId, @RequestParam Long eventId) {
+        try {
+            Booking booking = bookingService.createBooking(userId, eventId);
+            return ResponseEntity.ok(booking);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

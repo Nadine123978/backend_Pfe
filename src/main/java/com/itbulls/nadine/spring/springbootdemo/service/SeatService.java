@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.service;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
+import com.itbulls.nadine.spring.springbootdemo.model.Section;
 import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,5 +49,21 @@ public class SeatService {
     public Seat save(Seat seat) {
         return seatRepository.save(seat);
     }
+    
+    public void generateSeatsForSection(Section section) {
+        char[] rows = {'A', 'B', 'C', 'D', 'E'};
+        int seatsPerRow = 25;
+
+        for (char row : rows) {
+            for (int i = 1; i <= seatsPerRow; i++) {
+                Seat seat = new Seat();
+                seat.setCode("" + row + i);
+                seat.setReserved(false);
+                seat.setSection(section);
+                seatRepository.save(seat);
+            }
+        }
+    }
+
 
 }
