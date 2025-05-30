@@ -68,7 +68,7 @@ public class UserController {
             response.put("message", "Invalid credentials");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
-
+         
         Map<String, Object> response = new HashMap<>();
         response.put("email", user.getEmail());
         response.put("userId", user.getId());
