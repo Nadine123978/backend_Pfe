@@ -38,7 +38,9 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/auth/**").permitAll() // السماح لمسارات تسجيل الدخول والتسجيل
+                    .requestMatchers("/auth/**").permitAll()
+                    .requestMatchers("/secure1234/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
+            	    .requestMatchers("/api/admins/add").hasRole("SUPER_ADMIN")
                     .anyRequest().permitAll()     // باقي الطلبات تحتاج توثيق
                 )
                 .authenticationProvider(authenticationProvider())

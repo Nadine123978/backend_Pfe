@@ -6,13 +6,19 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.itbulls.nadine.spring.springbootdemo.model.Group;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 import com.itbulls.nadine.spring.springbootdemo.model.Section;
+import com.itbulls.nadine.spring.springbootdemo.model.User;
+import com.itbulls.nadine.spring.springbootdemo.repository.GroupRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.SectionRepository;
+import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
+
 
 @SpringBootApplication
 @EnableScheduling
@@ -63,6 +69,28 @@ public class SpringbootdemoApplication {
 	            }
 	        };
 	    }
+	}
+	@Bean
+	CommandLineRunner run(UserRepository repo, PasswordEncoder encoder, GroupRepository groupRepository) {
+	    return args -> {
+	    	User existingUser = repo.findByEmail("superadmin@gmail.com");
+	    	if (existingUser == null) {
+	    		Group superAdminGroup = groupRepository.findByName("SUPER_ADMIN")
+	    			    .orElseThrow(() -> new RuntimeException("SUPER_ADMIN group not found"));
+
+
+	            User user = new User();
+	            user.setUsername("superadmin");
+	            user.setEmail("superadmin@gmail.com");
+	            user.setPassword(encoder.encode("superpass"));
+	            user.setGroup(superAdminGroup);
+	            user.setEnabled(true);
+	            repo.save(user);
+	            System.out.println("✅ Super admin created");
+	        } else {
+	            System.out.println("ℹ️ Super admin already exists");
+	        }
+	    };
 	}
 
 }

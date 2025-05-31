@@ -1,10 +1,6 @@
 package com.itbulls.nadine.spring.springbootdemo.service;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.JwtParserBuilder;
+import io.jsonwebtoken.*;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -15,27 +11,27 @@ import java.util.Date;
 @Service
 public class JwtService {
 
+    // مفتاح ثابت (حافظ عليه سريًا)
+    private static final String SECRET = "supersecretkey123456789012345678901234567890";
+    private final Key key = new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), SignatureAlgorithm.HS512.getJcaName());
 
-	    // أنشئ المفتاح مرة واحدة فقط واحفظه في متغير
-	    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+    private final long expirationMs = 3600000; // ساعة
 
-	    private final long expirationMs = 3600000; // ساعة
+    public String generateToken(String username, String group) {
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("group", group)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
+                .signWith(key)
+                .compact();
+    }
 
-	    public String generateToken(String username, String group) {
-	        return Jwts.builder()
-	            .setSubject(username)
-	            .claim("group", group)
-	            .setIssuedAt(new Date())
-	            .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
-	            .signWith(key)  // لا حاجة لتحديد الـ Algorithm مرتين، لأنه محفوظ مع المفتاح
-	            .compact();
-	    }
-
-	    private JwtParser getJwtParser() {
-	        return Jwts.parserBuilder()
-	                .setSigningKey(key)
-	                .build();
-	   }
+    private JwtParser getJwtParser() {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build();
+    }
 
     public String extractUsername(String token) {
         return getJwtParser()
