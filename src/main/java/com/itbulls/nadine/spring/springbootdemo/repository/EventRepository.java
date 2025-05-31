@@ -24,6 +24,5 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 	   
 	   @Query("SELECT e FROM Event e WHERE e.id NOT IN (SELECT DISTINCT f.event.id FROM Folder f)")
 	   List<Event> findEventsWithoutFolders();
-
-
+	   long count();
 }
