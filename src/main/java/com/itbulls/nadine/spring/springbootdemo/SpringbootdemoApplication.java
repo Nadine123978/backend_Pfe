@@ -1,16 +1,13 @@
 package com.itbulls.nadine.spring.springbootdemo;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
-
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 import com.itbulls.nadine.spring.springbootdemo.model.Section;
@@ -20,10 +17,9 @@ import com.itbulls.nadine.spring.springbootdemo.repository.SectionRepository;
 @SpringBootApplication
 @EnableScheduling
 public class SpringbootdemoApplication {
-
-	public static void main(String[] args) {
-		SpringApplication.run(SpringbootdemoApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(SpringbootdemoApplication.class, args);
+    }
 	
 	@Configuration
 	public class WebConfig {
@@ -32,7 +28,7 @@ public class SpringbootdemoApplication {
 	        return new WebMvcConfigurer() {
 	            @Override
 	            public void addCorsMappings(CorsRegistry registry) {
-	                registry.addMapping("/**")
+	                registry.addMapping("/")
 	                        .allowedOrigins("http://localhost:5173") // ← Vite dev server
 	                        .allowedMethods("*")
 	                        .allowedHeaders("*");
