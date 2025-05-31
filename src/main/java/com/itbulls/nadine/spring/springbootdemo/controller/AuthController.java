@@ -54,10 +54,12 @@ public class AuthController {
             }
 
             String group = (user.getGroup() != null && user.getGroup().getName() != null)
-                ? user.getGroup().getName()
-                : "user";
+            	    ? user.getGroup().getName()
+            	    : "user";
 
-            String token = jwtService.generateToken(user.getEmail(), group);
+            	String token = jwtService.generateToken(user.getEmail(), group, user.getId());
+
+
 
             Map<String, String> responseBody = new HashMap<>();
             responseBody.put("token", token);

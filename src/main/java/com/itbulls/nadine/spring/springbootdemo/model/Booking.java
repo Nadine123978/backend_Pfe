@@ -29,8 +29,9 @@ public class Booking {
 
     @OneToOne
     @JoinColumn(name = "seat_id")
-    @JsonManagedReference
+    @JsonManagedReference(value = "seat-booking")
     private Seat seat;
+
 
     private Double price;
 

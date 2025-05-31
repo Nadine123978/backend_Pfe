@@ -15,24 +15,45 @@ public class Seat {
     private Long id;
 
     private String code;
+    
+    private boolean available = true; // المقعد متاح بشكل افتراضي
+
+    // ... باقي الخصائص مثل رقم المقعد أو رقم القاعة أو غيرها
+
+    // Getter و Setter للـ available
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
 
     @ManyToOne
     @JoinColumn(name = "section_id")
-    @JsonBackReference // 
+    @JsonBackReference(value = "section-seat")
     private Section section;
 
     @OneToOne(mappedBy = "seat")
-    @JsonManagedReference
+    @JsonBackReference(value = "seat-booking")
     private Booking booking;
 
-    @Column(name = "reserved", nullable = false)
-    private boolean reserved = false;
+    @Column(name = "is_reserved", nullable = false)
+    private boolean reserved = false; 
+    
+
 
     // Getters & Setters
 
     public Long getId() {
         return id;
     }
+    
+
+public boolean getReserved() {
+    return reserved;
+}
 
     public void setId(Long id) {
         this.id = id;

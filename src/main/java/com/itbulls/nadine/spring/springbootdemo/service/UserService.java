@@ -30,7 +30,15 @@ public class UserService {
     private BookingRepository bookingRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // ✅ ضروري لتشفير الباسورد
+    private PasswordEncoder passwordEncoder;
+    
+
+
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+// ✅ ضروري لتشفير الباسورد
 
     public User createUser(User user) {
         // جلب المجموعة الافتراضية (ID = 2)

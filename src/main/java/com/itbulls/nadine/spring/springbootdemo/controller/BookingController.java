@@ -1,19 +1,27 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
+import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
 import com.itbulls.nadine.spring.springbootdemo.service.EmailService;
+import com.itbulls.nadine.spring.springbootdemo.service.UserService;
 
 import org.hibernate.validator.internal.util.stereotypes.Lazy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/bookings")
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('USER')")
 public class BookingController {
 
     @Autowired
@@ -22,6 +30,10 @@ public class BookingController {
 
     @Autowired
     private EmailService emailService;
+    
+    @Autowired
+    private UserService userService;
+
 
     // طلب تأكيد الحجز بعد الدفع (POST)
     @PostMapping("/confirm")
@@ -78,11 +90,51 @@ public class BookingController {
     @PostMapping("/create")
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest bookingRequest) {
         try {
-            Booking booking = bookingService.createBooking(bookingRequest.getUserId(), bookingRequest.getEventId());
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body("Unauthorized");
+            }
+
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String email = userDetails.getUsername();
+
+            User user = userService.findByEmail(email);
+            if (user == null) {
+                throw new UsernameNotFoundException("User not found with email: " + email);
+            }
+
+            // التحقق إذا الـ userId الموجود في الطلب هو نفس الـ userId في Authentication
+            if (!user.getId().equals(bookingRequest.getUserId())) {
+                return ResponseEntity.status(403).body("You are not allowed to create bookings for other users");
+            }
+
+            Booking booking = bookingService.createBooking(user.getId(), bookingRequest.getEventId());
             return ResponseEntity.ok(booking);
+
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/my-bookings")
+    public ResponseEntity<?> getMyBookings() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String email = userDetails.getUsername();
+
+        User user = userService.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found");
+        }
+
+        var bookings = bookingService.getBookingsForUser(user.getId());
+
+        return ResponseEntity.ok(bookings);
     }
 
     // إلغاء الحجز واسترجاع المقعد

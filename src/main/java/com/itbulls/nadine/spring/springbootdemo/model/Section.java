@@ -20,14 +20,16 @@ public class Section {
     private Double price;
     private String color;      // لتلوين القسم بالواجهة
 
+    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL)
+    @JsonManagedReference(value = "section-seat")
+    private List<Seat> seats;
+
     @ManyToOne
     @JoinColumn(name = "event_id")
-    @JsonBackReference
+    @JsonBackReference(value = "event-section")
     private Event event;
 
-    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL)
-    @JsonManagedReference
-    private List<Seat> seats;
+
 
     // Getters & Setters
 

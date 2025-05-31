@@ -29,26 +29,27 @@ public class SecurityConfig {
     private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
-    private JwtService jwtService;   // لازم يكون bean موجود
+    private JwtService jwtService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtService);
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtService, customUserDetailsService);
 
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/auth/**").permitAll()
                     .requestMatchers("/secure1234/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
-            	    .requestMatchers("/api/admins/add").hasRole("SUPER_ADMIN")
-                    .anyRequest().permitAll()     // باقي الطلبات تحتاج توثيق
+                    .requestMatchers("/api/admins/add").hasRole("SUPER_ADMIN")
+                    .requestMatchers("/api/bookings/**").hasRole("USER")
+
+                    .anyRequest().permitAll()
                 )
                 .authenticationProvider(authenticationProvider())
                 .cors(Customizer.withDefaults())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)  // إضافة فلتر JWT هنا
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
     // باقي الكونفيغ كما هو
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

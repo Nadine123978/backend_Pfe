@@ -61,10 +61,20 @@ public class SeatController {
         return ResponseEntity.ok(booking);
     }
     @PostMapping
-    public ResponseEntity<Seat> createSeat(@RequestBody Seat seat) {
+    public ResponseEntity<?> createSeat(@RequestParam Long sectionId, @RequestBody Seat seat) {
+        Section section = sectionService.getSectionById(sectionId).orElse(null);
+        if (section == null) {
+            return ResponseEntity.badRequest().body("Section not found");
+        }
+        seat.setSection(section);
+
+        // تأكد من أن القيمة غير null
+        // لأن boolean primitive لا يمكن أن يكون null، لكن فقط في حال كان wrapper Boolean عليك التحقق
+
         Seat savedSeat = seatService.save(seat);
         return ResponseEntity.ok(savedSeat);
     }
+
     
     @PostMapping("/generate")
     public ResponseEntity<?> generateSeatsForSection(@RequestParam Long sectionId) {

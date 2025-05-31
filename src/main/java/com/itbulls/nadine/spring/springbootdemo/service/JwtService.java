@@ -17,15 +17,17 @@ public class JwtService {
 
     private final long expirationMs = 3600000; // ساعة
 
-    public String generateToken(String username, String group) {
+    public String generateToken(String username, String group, Long userId) {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("group", group)
+                .claim("userId", userId) // ← أضف الـ userId بالتوكن
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(key)
                 .compact();
     }
+
 
     private JwtParser getJwtParser() {
         return Jwts.parserBuilder()
@@ -59,4 +61,12 @@ public class JwtService {
                 .getExpiration();
         return expiration.before(new Date());
     }
+    
+    public Long extractUserId(String token) {
+        return getJwtParser()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("userId", Long.class);
+    }
+
 }

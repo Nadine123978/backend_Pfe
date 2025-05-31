@@ -37,6 +37,10 @@ public class BookingService {
 
     @Autowired
     private SeatService seatService;
+    
+    @Autowired
+    private SeatRepository seatRepository;
+
 
    
     public Booking holdSeat(Seat seat, User user, Double price) {
@@ -97,16 +101,19 @@ public class BookingService {
 
 
     public void cancelBooking(Long bookingId) {
-        Optional<Booking> optionalBooking = bookingRepository.findById(bookingId);
-        if (optionalBooking.isPresent()) {
-            Booking booking = optionalBooking.get();
-            booking.setStatus("CANCELLED");
-            seatService.markSeatAsAvailable(booking.getSeat());
-            bookingRepository.save(booking);
-        } else {
-            throw new RuntimeException("Booking not found");
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // افترض أن الحجز يحتوي على مقعد (seat)
+        Seat seat = booking.getSeat();
+        if (seat != null) {
+            seat.setAvailable(true); // نحرر المقعد
+            seatRepository.save(seat);
         }
+
+        bookingRepository.delete(booking); // نحذف الحجز
     }
+
 
     public List<Booking> getBookingsForUser(Long userId) {
         return bookingRepository.findByUserId(userId);
