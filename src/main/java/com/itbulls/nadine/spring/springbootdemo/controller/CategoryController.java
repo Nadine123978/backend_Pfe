@@ -53,13 +53,18 @@ public class CategoryController {
         Pageable top4 = PageRequest.of(0, 4);
         List<Category> trending = categoryRepository.findTrendingCategories(top4);
 
+        System.out.println("Trending categories count: " + trending.size());  // DEBUG
+
         List<CategoryDTO> result = trending.stream()
                 .filter(category -> !category.getEvents().isEmpty())
                 .map(category -> new CategoryDTO(category.getId(), category.getName()))
                 .collect(Collectors.toList());
 
+        System.out.println("Filtered trending categories count (with events): " + result.size());  // DEBUG
+
         return ResponseEntity.ok(result);
     }
+
     // عرض الأحداث حسب التصنيف
     @GetMapping("/{id}/events")
     public ResponseEntity<List<Event>> getEventsByCategoryId(@PathVariable Long id) {

@@ -9,7 +9,8 @@ import java.util.List;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
-    @Query("SELECT c FROM Category c LEFT JOIN c.events e GROUP BY c ORDER BY COUNT(e) DESC")
-    List<Category> findTrendingCategories(Pageable pageable);
+	@Query("SELECT c FROM Category c LEFT JOIN c.events e WHERE c.isTrending = true GROUP BY c ORDER BY COUNT(e) DESC")
+	List<Category> findTrendingCategories(Pageable pageable);
+
     long count();
 }
