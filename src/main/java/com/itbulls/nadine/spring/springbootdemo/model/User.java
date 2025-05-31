@@ -26,7 +26,7 @@ public class User {
     private Group group;
 
     @Column(name = "enabled")
-    private boolean enabled;
+    private Boolean enabled;
 
     
     public User() {}

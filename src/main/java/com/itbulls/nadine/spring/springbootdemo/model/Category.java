@@ -1,7 +1,11 @@
 package com.itbulls.nadine.spring.springbootdemo.model;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -17,7 +21,7 @@ public class Category {
 
     private String name;
 
-    @Column(name = "is_trending")
+    @Column(name = "is_trending", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean isTrending = false; // ✅ قيمة افتراضية لتجنّب null
 
     @OneToMany(mappedBy = "category")
@@ -26,6 +30,24 @@ public class Category {
     
     @Column(name = "image_url")
     private String imageUrl;
+    
+    @Column(name = "status", nullable = false)
+    private String status = "Inactive";
+
+
+    
+    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
 
     public String getImageUrl() {
         return imageUrl;
@@ -35,6 +57,7 @@ public class Category {
         this.imageUrl = imageUrl;
     }
 
+ 
 
     // Getters & Setters
 
@@ -69,4 +92,13 @@ public class Category {
     public void setEvents(List<Event> events) {
         this.events = events;
     }
+    
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
 }
