@@ -5,5 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     User findByEmail(String email);
-    User findByUsername(String username); // 👈 ضروري لتسجيل الدخول
+    User findByUsername(String username); 
+    long count();// 👈 ضروري لتسجيل الدخول
 }
