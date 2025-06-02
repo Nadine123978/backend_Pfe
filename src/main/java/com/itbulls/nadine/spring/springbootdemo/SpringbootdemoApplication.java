@@ -84,7 +84,6 @@ public class SpringbootdemoApplication {
 	            user.setEmail("superadmin@gmail.com");
 	            user.setPassword(encoder.encode("superpass"));
 	            user.setGroup(superAdminGroup);
-	            user.setEnabled(true);
 	            repo.save(user);
 	            System.out.println("✅ Super admin created");
 	        } else {

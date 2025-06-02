@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "booking")
@@ -50,6 +51,18 @@ public class Booking {
     public Event getEvent() {
         return event;
     }
+    
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<BookingTicket> bookingTickets;
+
+    public List<BookingTicket> getBookingTickets() {
+        return bookingTickets;
+    }
+
+    public void setBookingTickets(List<BookingTicket> bookingTickets) {
+        this.bookingTickets = bookingTickets;
+    }
+
     // Getters and Setters
 
     public Long getId() {

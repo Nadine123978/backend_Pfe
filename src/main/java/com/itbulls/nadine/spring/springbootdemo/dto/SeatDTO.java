@@ -5,12 +5,16 @@ public class SeatDTO {
     private String code;
     private boolean reserved;
 
+    // إضافة خاصية requestedSeats
+    private int requestedSeats;
+
     public SeatDTO() {}
 
-    public SeatDTO(Long id, String code, boolean reserved) {
+    public SeatDTO(Long id, String code, boolean reserved, int requestedSeats) {
         this.id = id;
         this.code = code;
         this.reserved = reserved;
+        this.requestedSeats = requestedSeats;
     }
 
     public Long getId() {
@@ -35,5 +39,13 @@ public class SeatDTO {
 
     public void setReserved(boolean reserved) {
         this.reserved = reserved;
+    }
+
+    public int getRequestedSeats() {
+        return requestedSeats;
+    }
+
+    public void setRequestedSeats(int requestedSeats) {
+        this.requestedSeats = requestedSeats;
     }
 }

@@ -2,6 +2,8 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
 
@@ -22,6 +24,9 @@ public class Folder {
     @ManyToOne
     @JoinColumn(name = "event_id")
     private Event event;
+    
+    @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images = new ArrayList<>();
 
     // === Getters and Setters ===
     public Long getId() {
