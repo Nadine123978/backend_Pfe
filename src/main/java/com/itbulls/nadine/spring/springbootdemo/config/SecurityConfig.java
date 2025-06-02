@@ -44,7 +44,7 @@ public class SecurityConfig {
                     .requestMatchers("/auth/**").permitAll()
                     .requestMatchers("/secure1234/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                     .requestMatchers("/api/admins/add").hasRole("SUPER_ADMIN")
-                    .requestMatchers("/api/bookings/**").hasRole("USER")
+                    .requestMatchers("/api/bookings/**").hasAnyRole("USER", "ADMIN", "SUPER_ADMIN")
                     .anyRequest().permitAll()
                 )
                 .authenticationProvider(authenticationProvider())
