@@ -104,7 +104,7 @@ public class BookingController {
         }
     }
 
-
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/my-bookings")
     public ResponseEntity<?> getMyBookings() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -126,7 +126,8 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
-    // إلغاء الحجز واسترجاع المقعد
+   // إلغاء الحجز واسترجاع المقعد
+    @PreAuthorize("hasRole('USER')")
     @PutMapping("/cancel/{bookingId}")
     public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId) {
         try {
@@ -148,5 +149,37 @@ public class BookingController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getBookingsForUser(@PathVariable Long userId) {
         return ResponseEntity.ok(bookingService.getBookingsForUser(userId));
+    }
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @GetMapping
+    public ResponseEntity<?> getAllBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookings());
+    }
+    
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
+        Optional<Booking> optional = bookingService.getBookingById(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        bookingService.deleteBooking(id);
+        return ResponseEntity.ok("Booking deleted successfully");
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateBookingStatus(@PathVariable Long id, @RequestParam String status) {
+        Optional<Booking> optional = bookingService.getBookingById(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Booking booking = optional.get();
+        booking.setStatus(status);
+        bookingService.saveBooking(booking);
+
+        return ResponseEntity.ok("Status updated to: " + status);
     }
 }
