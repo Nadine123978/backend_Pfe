@@ -24,6 +24,7 @@ import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
 @EnableScheduling
 public class SpringbootdemoApplication {
     public static void main(String[] args) {
+    	  System.out.println("🎯 APP STARTED");
         SpringApplication.run(SpringbootdemoApplication.class, args);
     }
 	

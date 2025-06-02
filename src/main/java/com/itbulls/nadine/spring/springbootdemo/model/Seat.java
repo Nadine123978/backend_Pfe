@@ -16,7 +16,7 @@ public class Seat {
 
     private String code;
     
-    private boolean available = true; // المقعد متاح بشكل افتراضي
+    private Boolean available = true; // المقعد متاح بشكل افتراضي
 
     // ... باقي الخصائص مثل رقم المقعد أو رقم القاعة أو غيرها
 
@@ -42,8 +42,6 @@ public class Seat {
     @Column(name = "is_reserved", nullable = false)
     private boolean reserved = false; 
     
-
-
     // Getters & Setters
 
     public Long getId() {
