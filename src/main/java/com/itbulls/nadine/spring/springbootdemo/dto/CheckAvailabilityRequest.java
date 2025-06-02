@@ -1,11 +1,20 @@
 package com.itbulls.nadine.spring.springbootdemo.dto;
 
 public class CheckAvailabilityRequest {
+
     private int adults;
     private int children;
     private int infants;
 
-    // Getters and setters
+    public CheckAvailabilityRequest() {
+    }
+
+    public CheckAvailabilityRequest(int adults, int children, int infants) {
+        this.adults = adults;
+        this.children = children;
+        this.infants = infants;
+    }
+
     public int getAdults() {
         return adults;
     }
@@ -31,7 +40,7 @@ public class CheckAvailabilityRequest {
     }
 
     public int getTotalRequestedSeats() {
-        return adults + children + infants;
+        // إذا الـ Infant ما بينحسبوا كمقاعد:
+        return adults + children;
     }
 }
-

@@ -15,20 +15,14 @@ public class Seat {
     private Long id;
 
     private String code;
-    
-    private Boolean available = true; // المقعد متاح بشكل افتراضي
 
-    // ... باقي الخصائص مثل رقم المقعد أو رقم القاعة أو غيرها
+    private Boolean available = true; 
 
-    // Getter و Setter للـ available
-    public boolean isAvailable() {
-        return available;
-    }
+    @Column(name = "price")
+    private Double price;  // السعر
 
-    public void setAvailable(boolean available) {
-        this.available = available;
-    }
-
+    @Column(name = "is_reserved", nullable = false)
+    private boolean reserved = false; 
 
     @ManyToOne
     @JoinColumn(name = "section_id")
@@ -39,19 +33,11 @@ public class Seat {
     @JsonBackReference(value = "seat-booking")
     private Booking booking;
 
-    @Column(name = "is_reserved", nullable = false)
-    private boolean reserved = false; 
-    
-    // Getters & Setters
+    // Getters and setters
 
     public Long getId() {
         return id;
     }
-    
-
-public boolean getReserved() {
-    return reserved;
-}
 
     public void setId(Long id) {
         this.id = id;
@@ -63,6 +49,46 @@ public boolean getReserved() {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+    
+    @Column(name = "row")
+    private Integer row;
+
+    @Column(name = "number")
+    private Integer number;
+
+    // مع getters و setters
+    public Integer getRow() {
+        return row;
+    }
+
+    public void setRow(Integer row) {
+        this.row = row;
+    }
+
+    public Integer getNumber() {
+        return number;
+    }
+
+    public void setNumber(Integer number) {
+        this.number = number;
+    }
+ 
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 
     public boolean isReserved() {

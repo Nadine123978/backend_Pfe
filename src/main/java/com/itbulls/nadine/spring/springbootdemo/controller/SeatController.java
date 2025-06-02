@@ -24,12 +24,28 @@ public class SeatController {
 
     @Autowired
     private BookingService bookingService;
-    
+
     @Autowired
     private SectionService sectionService;
 
     @Autowired
     private UserService userService;
+
+    // جلب جميع المقاعد
+    @GetMapping
+    public ResponseEntity<List<Seat>> getAllSeats() {
+        List<Seat> seats = seatService.getAllSeats();
+        return ResponseEntity.ok(seats);
+    }
+
+    // جلب مقعد حسب الـ id
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getSeatById(@PathVariable Long id) {
+    	return seatService.getSeatById(id)
+    	        .map(ResponseEntity::ok)
+    	        .orElseGet(() -> ResponseEntity.badRequest().body(null)); // لكن هيرجع ResponseEntity<Seat> فارغ
+
+    }
 
     // جلب المقاعد حسب القسم
     @GetMapping("/section/{sectionId}")
@@ -45,7 +61,6 @@ public class SeatController {
             @RequestParam Long userId,
             @RequestParam Double price
     ) {
-        // تحقق من أن المقعد موجود وغير محجوز
         if (seatService.isSeatReserved(seatId)) {
             return ResponseEntity.badRequest().body("Seat already reserved");
         }
@@ -56,10 +71,11 @@ public class SeatController {
             return ResponseEntity.badRequest().body("Seat or User not found");
         }
 
-
         Booking booking = bookingService.holdSeat(seat, user, price);
         return ResponseEntity.ok(booking);
     }
+
+    // إنشاء مقعد جديد مع ربطه بقسم
     @PostMapping
     public ResponseEntity<?> createSeat(@RequestParam Long sectionId, @RequestBody Seat seat) {
         Section section = sectionService.getSectionById(sectionId).orElse(null);
@@ -68,14 +84,35 @@ public class SeatController {
         }
         seat.setSection(section);
 
-        // تأكد من أن القيمة غير null
-        // لأن boolean primitive لا يمكن أن يكون null، لكن فقط في حال كان wrapper Boolean عليك التحقق
-
         Seat savedSeat = seatService.save(seat);
         return ResponseEntity.ok(savedSeat);
     }
 
-    
+    // تعديل مقعد موجود
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateSeat(@PathVariable Long id, @RequestBody Seat updatedSeat) {
+        return seatService.getSeatById(id).map(seat -> {
+            seat.setRow(updatedSeat.getRow());
+            seat.setNumber(updatedSeat.getNumber());
+            seat.setReserved(updatedSeat.isReserved());
+            if (updatedSeat.getSection() != null) {
+                seat.setSection(updatedSeat.getSection());
+            }
+            Seat saved = seatService.save(seat);
+            return ResponseEntity.ok(saved);
+        }).orElseGet(() -> ResponseEntity.badRequest().body("Seat not found"));
+    }
+
+    // حذف مقعد
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteSeat(@PathVariable Long id) {
+        return seatService.getSeatById(id).map(seat -> {
+            seatService.delete(seat);
+            return ResponseEntity.ok("Seat deleted successfully");
+        }).orElse(ResponseEntity.badRequest().body("Seat not found"));
+    }
+
+    // توليد المقاعد لقسم معين
     @PostMapping("/generate")
     public ResponseEntity<?> generateSeatsForSection(@RequestParam Long sectionId) {
         Section section = sectionService.getSectionById(sectionId).orElse(null);
@@ -85,19 +122,17 @@ public class SeatController {
         seatService.generateSeatsForSection(section);
         return ResponseEntity.ok("Seats generated successfully for section " + section.getName());
     }
-    
+
+    // تأكيد حجز المقاعد
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmSeats(@RequestBody List<Long> seatIds) {
         for (Long id : seatIds) {
             Seat seat = seatService.getSeatById(id).orElse(null);
             if (seat != null && !seat.isReserved()) {
                 seat.setReserved(true);
-                seatService.save(seat); // أو seatRepository.save(seat);
+                seatService.save(seat);
             }
         }
         return ResponseEntity.ok("Seats confirmed successfully");
     }
-
-
-
 }

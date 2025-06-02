@@ -1,5 +1,6 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
+import com.itbulls.nadine.spring.springbootdemo.controller.BookingController.BookingRequest;
 import com.itbulls.nadine.spring.springbootdemo.dto.CheckAvailabilityRequest;
 import com.itbulls.nadine.spring.springbootdemo.dto.SeatDTO;
 import com.itbulls.nadine.spring.springbootdemo.dto.SeatRequest;
@@ -17,6 +18,7 @@ import com.itbulls.nadine.spring.springbootdemo.service.EventService;
 import com.itbulls.nadine.spring.springbootdemo.repository.SectionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -247,9 +249,6 @@ public class EventController {
         }
         return ResponseEntity.ok(events); // إرجاع الأحداث
     }
-
-
-    
     @GetMapping("/count")
     public Map<String, Long> getEventCounts() {
         Map<String, Long> eventCounts = new HashMap<>();
@@ -282,20 +281,24 @@ public class EventController {
     public List<Event> getEventsWithoutFolders() {
         return eventService.getEventsWithoutFolders();
     }
-     
-    @PostMapping("/{eventId}/check-availability")
-    public ResponseEntity<Map<String, Boolean>> checkAvailability(
-            @PathVariable Long eventId,
-            @RequestBody CheckAvailabilityRequest request) {
-        
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+    @PostMapping("/{id}/check-availability")
 
-        int totalRequestedSeats = request.getTotalRequestedSeats();
-        boolean available = event.getAvailableSeats() >= totalRequestedSeats;
+    public ResponseEntity<?> checkAvailability(@PathVariable Long id, @RequestBody CheckAvailabilityRequest request) {
+        int totalRequested = request.getTotalRequestedSeats(); // فقط البالغين والأطفال
 
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("available", available);
-        return ResponseEntity.ok(response);
+        Event event = eventRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+
+        boolean available = totalRequested <= event.getAvailableSeats();
+
+        int remainingSeats = event.getAvailableSeats() - totalRequested;
+
+        return ResponseEntity.ok(Map.of(
+            "available", available,
+            "requestedSeats", totalRequested,
+            "remainingSeats", remainingSeats
+        ));
     }
+
+
 }
