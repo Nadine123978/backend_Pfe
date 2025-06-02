@@ -1,20 +1,27 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
+import com.itbulls.nadine.spring.springbootdemo.dto.CheckAvailabilityRequest;
+import com.itbulls.nadine.spring.springbootdemo.dto.SeatDTO;
+import com.itbulls.nadine.spring.springbootdemo.dto.SeatRequest;
 import com.itbulls.nadine.spring.springbootdemo.dto.TicketSectionDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.Category;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.Location;
+import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 import com.itbulls.nadine.spring.springbootdemo.model.Section;
 import com.itbulls.nadine.spring.springbootdemo.repository.CategoryRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.LocationRepository;
+import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
 import com.itbulls.nadine.spring.springbootdemo.service.EventService;
 import com.itbulls.nadine.spring.springbootdemo.repository.SectionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,14 +48,26 @@ public class EventController {
     @Autowired
     private LocationRepository locationRepository;
     
-    private final EventService eventService;
-    public EventController(EventService eventService) {
+    @Autowired
+    private final SeatRepository seatRepository;
+
+    @Autowired
+    private EventService eventService;
+    
+    @Autowired
+    public EventController(EventRepository eventRepository, SeatRepository seatRepository, EventService eventService) {
+        this.eventRepository = eventRepository;
+        this.seatRepository = seatRepository;
         this.eventService = eventService;
     }
 
     // Constructor Injection (أفضل ممارسة)
 
     
+    @GetMapping
+    public List<Event> getAllEvents() {
+        return eventRepository.findAll();
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<Event> createEvent(
@@ -263,8 +282,20 @@ public class EventController {
     public List<Event> getEventsWithoutFolders() {
         return eventService.getEventsWithoutFolders();
     }
-    
+     
+    @PostMapping("/{eventId}/check-availability")
+    public ResponseEntity<Map<String, Boolean>> checkAvailability(
+            @PathVariable Long eventId,
+            @RequestBody CheckAvailabilityRequest request) {
+        
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
 
-    
+        int totalRequestedSeats = request.getTotalRequestedSeats();
+        boolean available = event.getAvailableSeats() >= totalRequestedSeats;
 
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("available", available);
+        return ResponseEntity.ok(response);
+    }
 }

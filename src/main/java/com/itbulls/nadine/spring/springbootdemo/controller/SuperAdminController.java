@@ -25,7 +25,7 @@ public class SuperAdminController {
     }
 
     @PostMapping("/create-admin")
-    @PreAuthorize("hasAuthority('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public String createAdmin(@RequestBody CreateAdminRequest request) {
         userService.createAdmin(request.getEmail(), request.getUsername(), request.getPassword(), request.getGroupId());
         return "Admin created";
@@ -46,7 +46,7 @@ public class SuperAdminController {
     }
 
     @GetMapping("/admins")
-    @PreAuthorize("hasAuthority('SUPER_ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public List<UserDto> getAdmins() {
         int adminGroupId = 1;
         return userService.getUsersByGroupId(adminGroupId);

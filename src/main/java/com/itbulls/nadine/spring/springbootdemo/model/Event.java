@@ -2,6 +2,7 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -37,6 +38,12 @@ public class Event {
 
     @Column(name = "is_featured")
     private Boolean isFeatured = false;
+    
+    @OneToMany(mappedBy = "event", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Booking> bookings;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Section> sections;
 
     @PrePersist
     public void setStatus() {
@@ -158,4 +165,11 @@ public class Event {
     public void setIsFeatured(Boolean isFeatured) {
         this.isFeatured = isFeatured;
     }
+    public int getAvailableSeats() {
+        if (totalTickets == null || soldTickets == null) {
+            return 0;
+        }
+        return totalTickets - soldTickets;
+    }
+
 }

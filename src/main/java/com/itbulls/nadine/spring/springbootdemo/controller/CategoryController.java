@@ -3,8 +3,10 @@ package com.itbulls.nadine.spring.springbootdemo.controller;
 import com.itbulls.nadine.spring.springbootdemo.dto.CategoryDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.Category;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
+import com.itbulls.nadine.spring.springbootdemo.model.Folder;
 import com.itbulls.nadine.spring.springbootdemo.repository.CategoryRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
+import com.itbulls.nadine.spring.springbootdemo.repository.FolderRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +36,10 @@ public class CategoryController {
 
     @Autowired
     private EventRepository eventRepository;
+    
+    @Autowired
+    private FolderRepository folderRepository;
+
 
     // إضافة تصنيف جديد (عادي)
     @PostMapping
@@ -83,7 +89,10 @@ public class CategoryController {
         return ResponseEntity.ok(count);
     }
 
+    
     // ✅ إضافة تصنيف مع رفع صورة
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+
     @PostMapping("/upload")
     public ResponseEntity<Category> uploadCategory(@RequestParam("name") String name,
                                                    @RequestParam("image") MultipartFile imageFile,
@@ -101,7 +110,6 @@ public class CategoryController {
         return ResponseEntity.ok(cat);
     }
 
-    
     @PutMapping("/{id}/update")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<Category> updateCategory(@PathVariable Long id,
@@ -140,8 +148,34 @@ public class CategoryController {
         }
     }
 
+    // حذف تصنيف
+    // حذف تصنيف مع إزالة الأحداث التابعة أولاً
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+        Optional<Category> optional = categoryRepository.findById(id);
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
-    
+        // أولًا: احذف الأحداث (Events) المرتبطة بهذا الصنف
+        List<Event> events = eventRepository.findByCategoryId(id);
+        for (Event ev : events) {
+            // قبل حذف كل حدث، احذف كل الـ Folders المرتبطة به
+            List<Folder> folders = folderRepository.findByEventId(ev.getId());
+            if (!folders.isEmpty()) {
+                folderRepository.deleteAll(folders);
+            }
+            // الآن احذف هذا الحدث نفسه
+            eventRepository.delete(ev);
+        }
+
+        // ثم احذف الصنف (Category) نفسه
+        categoryRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+
     @GetMapping("/{id}")
     public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
         return categoryRepository.findById(id)

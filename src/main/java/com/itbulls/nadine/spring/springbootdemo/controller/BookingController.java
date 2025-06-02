@@ -6,7 +6,8 @@ import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
 import com.itbulls.nadine.spring.springbootdemo.service.EmailService;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
 
-import org.hibernate.validator.internal.util.stereotypes.Lazy;
+import org.springframework.context.annotation.Lazy;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,12 +22,12 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/bookings")
 @CrossOrigin(origins = "*")
-@PreAuthorize("hasRole('USER')")
 public class BookingController {
 
-    @Autowired
-    @Lazy
-    private BookingService bookingService;
+	@Lazy
+	@Autowired
+	private BookingService bookingService;
+
 
     @Autowired
     private EmailService emailService;
@@ -65,28 +66,19 @@ public class BookingController {
 
     // إنشاء طلب حجز جديد باستخدام JSON body
     public static class BookingRequest {
-        private Long userId;
         private Long eventId;
-
-        // getters
-        public Long getUserId() {
-            return userId;
-        }
 
         public Long getEventId() {
             return eventId;
-        }
-
-        // setters
-        public void setUserId(Long userId) {
-            this.userId = userId;
         }
 
         public void setEventId(Long eventId) {
             this.eventId = eventId;
         }
     }
+ 
 
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/create")
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest bookingRequest) {
         try {
@@ -100,14 +92,10 @@ public class BookingController {
 
             User user = userService.findByEmail(email);
             if (user == null) {
-                throw new UsernameNotFoundException("User not found with email: " + email);
+                return ResponseEntity.status(404).body("User not found");
             }
 
-            // التحقق إذا الـ userId الموجود في الطلب هو نفس الـ userId في Authentication
-            if (!user.getId().equals(bookingRequest.getUserId())) {
-                return ResponseEntity.status(403).body("You are not allowed to create bookings for other users");
-            }
-
+            // نستخدم user.getId() من قاعدة البيانات
             Booking booking = bookingService.createBooking(user.getId(), bookingRequest.getEventId());
             return ResponseEntity.ok(booking);
 
@@ -115,6 +103,7 @@ public class BookingController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 
     @GetMapping("/my-bookings")
     public ResponseEntity<?> getMyBookings() {

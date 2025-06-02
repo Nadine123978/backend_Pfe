@@ -25,9 +25,6 @@ public class User {
     @JoinColumn(name = "group_id")
     private Group group;
 
-    @Column(name = "enabled")
-    private Boolean enabled;
-
     
     public User() {}
 
@@ -36,17 +33,10 @@ public class User {
         this.email = email;
         this.password = password;
         this.group = group;
-        this.enabled = true;  // تهيئة enabled تلقائياً على true
+      
     }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-    
+   
     public Long getId() {
         return id;
     }

@@ -12,4 +12,7 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<Seat> findBySection_Event_Id(Long eventId); // إذا بدك تسحب حسب الفعالية
 
     boolean existsByCodeAndSectionId(String code, Long sectionId);
+
+        Seat findByCode(String code);
+    
 }

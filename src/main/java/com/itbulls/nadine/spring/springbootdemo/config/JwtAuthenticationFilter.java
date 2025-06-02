@@ -1,4 +1,4 @@
-package com.itbulls.nadine.spring.springbootdemo.config;
+ package com.itbulls.nadine.spring.springbootdemo.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -29,34 +29,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+    	System.out.println("=== JwtAuthenticationFilter triggered ===");
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             try {
                 String username = jwtService.extractUsername(token);
-                System.out.println("Extracted username from token: " + username);
-
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-                    System.out.println("Loaded user details for: " + userDetails.getUsername());
+
+                    System.out.println("Username from token: " + username);
+                    System.out.println("UserDetails username: " + userDetails.getUsername());
+                    System.out.println("Authorities: " + userDetails.getAuthorities());
+                    System.out.println("Token Valid? " + jwtService.isTokenValid(token, userDetails.getUsername()));
 
                     if (jwtService.isTokenValid(token, userDetails.getUsername())) {
-                        System.out.println("Token is valid. Setting Authentication.");
-
-                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
+                        UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
 
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authToken);
-                    } else {
-                        System.out.println("Invalid token.");
                     }
                 }
+
             } catch (Exception e) {
-                e.printStackTrace();
+                e.printStackTrace(); // لأغراض التصحيح فقط، ممكن تستبدلها باللوج المناسب
             }
-        } else {
-            System.out.println("Authorization header missing or doesn't start with Bearer.");
         }
-}}
+
+        filterChain.doFilter(request, response);
+    }
+}

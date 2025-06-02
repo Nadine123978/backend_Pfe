@@ -24,10 +24,10 @@ public class Category {
     @Column(name = "is_trending", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean isTrending = false; // ✅ قيمة افتراضية لتجنّب null
 
-    @OneToMany(mappedBy = "category")
+    @OneToMany(mappedBy = "category", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JsonManagedReference
     private List<Event> events;
-    
+
     @Column(name = "image_url")
     private String imageUrl;
     

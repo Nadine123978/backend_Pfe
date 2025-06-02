@@ -45,7 +45,6 @@ public class SecurityConfig {
                     .requestMatchers("/secure1234/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                     .requestMatchers("/api/admins/add").hasRole("SUPER_ADMIN")
                     .requestMatchers("/api/bookings/**").hasRole("USER")
-
                     .anyRequest().permitAll()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -57,7 +56,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
+        config.setAllowedOrigins(List.of("http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
