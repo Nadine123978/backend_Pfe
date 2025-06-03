@@ -4,17 +4,19 @@ public class SeatDTO {
     private Long id;
     private String code;
     private boolean reserved;
-
-    // إضافة خاصية requestedSeats
     private int requestedSeats;
+
+    // ✅ الحقل الجديد لإرجاع اللون
+    private String color;
 
     public SeatDTO() {}
 
-    public SeatDTO(Long id, String code, boolean reserved, int requestedSeats) {
+    public SeatDTO(Long id, String code, boolean reserved, int requestedSeats, String color) {
         this.id = id;
         this.code = code;
         this.reserved = reserved;
         this.requestedSeats = requestedSeats;
+        this.color = color;
     }
 
     public Long getId() {
@@ -47,5 +49,14 @@ public class SeatDTO {
 
     public void setRequestedSeats(int requestedSeats) {
         this.requestedSeats = requestedSeats;
+    }
+
+    // ✅ Getter و Setter للـ color
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 }

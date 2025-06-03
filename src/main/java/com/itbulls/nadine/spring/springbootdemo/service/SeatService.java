@@ -66,6 +66,9 @@ public class SeatService {
         seatRepository.save(seat);
     }
 
+    public void saveAll(List<Seat> seats) {
+        seatRepository.saveAll(seats);
+    }
 
 }
 

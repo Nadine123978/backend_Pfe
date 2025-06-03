@@ -99,17 +99,34 @@ public class SeatController {
         }
 
         Seat seat = optionalSeat.get();
+
+        // طباعة لفحص القيم القادمة
+        System.out.println("Updating seat id: " + id);
+        System.out.println("New color: " + updatedSeat.getColor());
+        System.out.println("New price: " + updatedSeat.getPrice());
+
         seat.setRow(updatedSeat.getRow());
         seat.setNumber(updatedSeat.getNumber());
         seat.setReserved(updatedSeat.isReserved());
-
+        seat.setPrice(updatedSeat.getPrice());
+        seat.setColor(updatedSeat.getColor());
+        seat.setRow(updatedSeat.getRow());
+        seat.setNumber(updatedSeat.getNumber());
         if (updatedSeat.getSection() != null) {
             seat.setSection(updatedSeat.getSection());
         }
 
         Seat saved = seatService.save(seat);
+
+        // طباعة للتأكد من القيم المحفوظة
+        System.out.println("Saved seat color: " + saved.getColor());
+        System.out.println("Saved seat price: " + saved.getPrice());
+        System.out.println("Saved seat row: " + saved.getRow());
+        System.out.println("Saved seat number: " + saved.getNumber());
+
         return ResponseEntity.ok(saved);
     }
+
     
     @PostMapping("/section/{sectionId}")
     public ResponseEntity<?> addSeatsToSection(
@@ -123,12 +140,13 @@ public class SeatController {
 
         for (Seat seat : seats) {
             seat.setSection(section);
-            seatService.save(seat);
+            seat.setColor(section.getColor());  // ننسخ اللون من القسم للكرسي
         }
+
+        seatService.saveAll(seats);  // نحفظ كل الكراسي دفعة واحدة
 
         return ResponseEntity.ok("Seats added to section " + section.getName());
     }
-
 
 
 

@@ -2,7 +2,6 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 
@@ -24,6 +23,9 @@ public class Seat {
     @Column(name = "is_reserved", nullable = false)
     private boolean reserved = false; 
 
+    @Column(name = "seat_color")   // أضفت خاصية اللون هنا
+    private String color;
+
     @ManyToOne
     @JoinColumn(name = "section_id")
     @JsonBackReference(value = "section-seat")
@@ -32,6 +34,12 @@ public class Seat {
     @OneToOne(mappedBy = "seat")
     @JsonBackReference(value = "seat-booking")
     private Booking booking;
+
+    @Column(name = "seat_row")  // بدل row
+    private Integer row;
+
+    @Column(name = "seat_number")  // بدل number
+    private Integer number;
 
     // Getters and setters
 
@@ -58,15 +66,7 @@ public class Seat {
     public void setAvailable(boolean available) {
         this.available = available;
     }
-    
-    @Column(name = "seat_row")  // بدل row
-    private Integer row;
 
-    @Column(name = "seat_number")  // بدل number
-    private Integer number;
-
-
-    // مع getters و setters
     public Integer getRow() {
         return row;
     }
@@ -82,7 +82,6 @@ public class Seat {
     public void setNumber(Integer number) {
         this.number = number;
     }
- 
 
     public Double getPrice() {
         return price;
@@ -98,6 +97,14 @@ public class Seat {
 
     public void setReserved(boolean reserved) {
         this.reserved = reserved;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 
     public Section getSection() {

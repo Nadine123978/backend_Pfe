@@ -28,7 +28,17 @@ public class Section {
     @JoinColumn(name = "event_id")
     @JsonBackReference(value = "event-section")
     private Event event;
+    
+    private Integer totalSeats;
 
+    
+    public Integer getTotalSeats() {
+        return totalSeats;
+    }
+
+    public void setTotalSeats(Integer totalSeats) {
+        this.totalSeats = totalSeats;
+    }
 
 
     // Getters & Setters
