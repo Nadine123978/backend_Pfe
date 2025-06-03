@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -68,6 +69,13 @@ public class UserController {
         response.put("message", "Logged out successfully");
         return ResponseEntity.ok(response);
     }
+    
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return ResponseEntity.ok(users);
+    }
+
 
 
 }

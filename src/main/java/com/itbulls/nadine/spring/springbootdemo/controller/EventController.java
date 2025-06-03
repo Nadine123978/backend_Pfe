@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,29 +34,25 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-@CrossOrigin(origins = "*")
 
 @RestController
 @RequestMapping("/api/events")
+@CrossOrigin(origins = "*")
 public class EventController {
 
     @Autowired
     private EventRepository eventRepository;
     @Autowired
     private SectionRepository sectionRepository;
-
     @Autowired
     private CategoryRepository categoryRepository;
-
     @Autowired
     private LocationRepository locationRepository;
-    
     @Autowired
     private final SeatRepository seatRepository;
-
     @Autowired
     private EventService eventService;
-    
+
     @Autowired
     public EventController(EventRepository eventRepository, SeatRepository seatRepository, EventService eventService) {
         this.eventRepository = eventRepository;
@@ -63,14 +60,13 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    // Constructor Injection (أفضل ممارسة)
-
-    
     @GetMapping
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
     }
 
+    // ✅ محمية: فقط admin أو superadmin
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PostMapping("/upload")
     public ResponseEntity<Event> createEvent(
         @RequestParam String title,
@@ -78,55 +74,40 @@ public class EventController {
         @RequestParam double price,
         @RequestParam int soldTickets,
         @RequestParam int totalTickets,
-        @RequestParam(required = false) String status, // اجعل status اختياري
-        @RequestParam(required = false) String date,  // إذا لم يتم تحديد تاريخ
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String date,
         @RequestParam Long categoryId,
         @RequestParam Long locationId,
         @RequestParam String startDate,
         @RequestParam("file") MultipartFile file,
-        @RequestParam(required = false) boolean isFeatured // إضافة isFeatured هنا
+        @RequestParam(required = false) boolean isFeatured
     ) throws IOException {
+        if (status == null || status.isEmpty()) status = "draft";
 
-        // إذا ما كان status موجود، نحدده كـ "draft" افتراضيًا
-        if (status == null || status.isEmpty()) {
-            status = "draft";
-        }
-
-        // إذا لم يكن هناك تاريخ معين، نعينه كـ null
         LocalDateTime eventDate = null;
         if (date != null && !date.isEmpty()) {
-            eventDate = LocalDateTime.parse(date); // تحويل string إلى LocalDateTime
+            eventDate = LocalDateTime.parse(date);
         }
 
-        // 2. إنشاء الحدث
         Event event = new Event();
         event.setTitle(title);
         event.setDescription(description);
         event.setPrice(price);
         event.setSoldTickets(soldTickets);
         event.setTotalTickets(totalTickets);
-        event.setStatus(status); // تعيين status افتراضيًا "draft" إذا لم يتم تمريره
+        event.setStatus(status);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
         LocalDateTime startDateTime = LocalDateTime.parse(startDate, formatter);
         event.setStartDate(startDateTime);
-
-        // تعيين قيمة isFeatured
         event.setIsFeatured(isFeatured);
 
-        // إنشاء مجلد الصور إذا مش موجود
         Path uploadDir = Paths.get("uploads");
-        if (!Files.exists(uploadDir)) {
-            Files.createDirectories(uploadDir);
-        }
+        if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
 
-        // احفظ الصورة فعلياً
         String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
         Path filePath = uploadDir.resolve(fileName);
         Files.write(filePath, file.getBytes());
-
-        // عيّن المسار الكامل للرابط يلي بيتعرض بالواجهة
-        String imageUrl = "http://localhost:8081/uploads/" + fileName;
-        event.setImageUrl(imageUrl);
+        event.setImageUrl("http://localhost:8081/uploads/" + fileName);
 
         Category category = categoryRepository.findById(categoryId).orElse(null);
         Location location = locationRepository.findById(locationId).orElse(null);
@@ -141,57 +122,31 @@ public class EventController {
         return ResponseEntity.ok(eventRepository.save(event));
     }
 
+    // ✅ محمية: فقط admin أو superadmin
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateEvent(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
         return eventRepository.findById(id).map(event -> {
             try {
-                if (updates.containsKey("title")) {
-                    event.setTitle((String) updates.get("title"));
-                }
-
-                if (updates.containsKey("description")) {
-                    event.setDescription((String) updates.get("description"));
-                }
-
-                if (updates.containsKey("price")) {
-                    event.setPrice(Double.parseDouble(updates.get("price").toString()));
-                }
-
-                if (updates.containsKey("status")) {
-                    event.setStatus((String) updates.get("status"));
-                }
-
-                if (updates.containsKey("soldTickets")) {
-                    event.setSoldTickets(Integer.parseInt(updates.get("soldTickets").toString()));
-                }
-
-                if (updates.containsKey("totalTickets")) {
-                    event.setTotalTickets(Integer.parseInt(updates.get("totalTickets").toString()));
-                }
-
-                if (updates.containsKey("startDate")) {
-                    event.setStartDate(LocalDateTime.parse((String) updates.get("startDate")));
-                }
-
-                if (updates.containsKey("endDate")) {
-                    event.setEndDate(LocalDateTime.parse((String) updates.get("endDate")));
-                }
-
+                if (updates.containsKey("title")) event.setTitle((String) updates.get("title"));
+                if (updates.containsKey("description")) event.setDescription((String) updates.get("description"));
+                if (updates.containsKey("price")) event.setPrice(Double.parseDouble(updates.get("price").toString()));
+                if (updates.containsKey("status")) event.setStatus((String) updates.get("status"));
+                if (updates.containsKey("soldTickets")) event.setSoldTickets(Integer.parseInt(updates.get("soldTickets").toString()));
+                if (updates.containsKey("totalTickets")) event.setTotalTickets(Integer.parseInt(updates.get("totalTickets").toString()));
+                if (updates.containsKey("startDate")) event.setStartDate(LocalDateTime.parse((String) updates.get("startDate")));
+                if (updates.containsKey("endDate")) event.setEndDate(LocalDateTime.parse((String) updates.get("endDate")));
                 if (updates.containsKey("category")) {
                     Map<String, Object> categoryMap = (Map<String, Object>) updates.get("category");
                     Long categoryId = Long.parseLong(categoryMap.get("id").toString());
                     categoryRepository.findById(categoryId).ifPresent(event::setCategory);
                 }
-
                 if (updates.containsKey("location")) {
                     Map<String, Object> locationMap = (Map<String, Object>) updates.get("location");
                     Long locationId = Long.parseLong(locationMap.get("id").toString());
                     locationRepository.findById(locationId).ifPresent(event::setLocation);
                 }
-
-                if (updates.containsKey("isFeatured")) {
-                    event.setIsFeatured(Boolean.parseBoolean(updates.get("isFeatured").toString())); // تعيين isFeatured
-                }
+                if (updates.containsKey("isFeatured")) event.setIsFeatured(Boolean.parseBoolean(updates.get("isFeatured").toString()));
 
                 Event updated = eventRepository.save(event);
                 return ResponseEntity.ok(updated);
@@ -201,54 +156,39 @@ public class EventController {
             }
         }).orElse(ResponseEntity.notFound().build());
     }
-    
-
 
     @GetMapping("/featured")
     public List<Event> getFeaturedEvents() {
-        return eventRepository.findByIsFeaturedTrue(); // إرجاع الأحداث المميزة فقط
+        return eventRepository.findByIsFeaturedTrue();
     }
-    
+
     @GetMapping("/{eventId}/sections")
     public ResponseEntity<List<Section>> getSectionsByEventId(@PathVariable Long eventId) {
         List<Section> sections = sectionRepository.findByEventId(eventId);
-        if (sections.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(sections);
+        return sections.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(sections);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Event> getEventById(@PathVariable Long id) {
         Event event = eventService.getEventById(id);
-        if (event != null) {
-            return ResponseEntity.ok(event);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
     }
-
 
     @CrossOrigin(origins = "http://localhost:5174")
     @GetMapping("/by-status")
     public ResponseEntity<List<Event>> getEventsByStatus(@RequestParam(required = false) List<String> status) {
-        List<Event> events;
-        if (status != null && !status.isEmpty()) {
-            events = eventRepository.findByStatusInIgnoreCase(status); // استخدم findByStatusInIgnoreCase لجلب الحالات المتعددة
-        } else {
-            events = eventRepository.findAll();
-        }
+        List<Event> events = (status != null && !status.isEmpty())
+                ? eventRepository.findByStatusInIgnoreCase(status)
+                : eventRepository.findAll();
         return ResponseEntity.ok(events);
     }
-    
+
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<Event>> getEventsByCategory(@PathVariable Long categoryId) {
-        List<Event> events = eventRepository.findByCategory_Id(categoryId); // استرجاع الأحداث باستخدام categoryId
-        if (events.isEmpty()) {
-            return ResponseEntity.notFound().build(); // إذا لم توجد أحداث
-        }
-        return ResponseEntity.ok(events); // إرجاع الأحداث
+        List<Event> events = eventRepository.findByCategory_Id(categoryId);
+        return events.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(events);
     }
+
     @GetMapping("/count")
     public Map<String, Long> getEventCounts() {
         Map<String, Long> eventCounts = new HashMap<>();
@@ -257,40 +197,35 @@ public class EventController {
         eventCounts.put("past", eventRepository.countByStatus("past"));
         return eventCounts;
     }
+
+    // ✅ محمية: فقط admin أو superadmin
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PutMapping("/update-status/{id}")
     public ResponseEntity<Event> updateEventStatus(@PathVariable Long id) {
         Event event = eventRepository.findById(id).orElse(null);
+        if (event == null) return ResponseEntity.notFound().build();
 
-        if (event == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        if (event.getStartDate().isAfter(LocalDateTime.now())) {
-            event.setStatus("upcoming");
-        } else if (event.getEndDate().isBefore(LocalDateTime.now())) {
-            event.setStatus("past");
-        } else {
-            event.setStatus("active");
-        }
+        if (event.getStartDate().isAfter(LocalDateTime.now())) event.setStatus("upcoming");
+        else if (event.getEndDate().isBefore(LocalDateTime.now())) event.setStatus("past");
+        else event.setStatus("active");
 
         eventRepository.save(event);
         return ResponseEntity.ok(event);
     }
-  
+
     @GetMapping("/no-folders")
     public List<Event> getEventsWithoutFolders() {
         return eventService.getEventsWithoutFolders();
     }
-    @PostMapping("/{id}/check-availability")
 
+    @PostMapping("/{id}/check-availability")
     public ResponseEntity<?> checkAvailability(@PathVariable Long id, @RequestBody CheckAvailabilityRequest request) {
-        int totalRequested = request.getTotalRequestedSeats(); // فقط البالغين والأطفال
+        int totalRequested = request.getTotalRequestedSeats();
 
         Event event = eventRepository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
 
         boolean available = totalRequested <= event.getAvailableSeats();
-
         int remainingSeats = event.getAvailableSeats() - totalRequested;
 
         return ResponseEntity.ok(Map.of(
@@ -299,6 +234,4 @@ public class EventController {
             "remainingSeats", remainingSeats
         ));
     }
-
-
 }

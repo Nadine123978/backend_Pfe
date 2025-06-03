@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.springframework.core.io.ByteArrayResource;
+
 
 
 
@@ -64,5 +66,22 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    public void sendBookingConfirmationWithPDF(String toEmail, String subject, String body, byte[] pdfBytes) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(body);
+
+            helper.addAttachment("ticket.pdf", new ByteArrayResource(pdfBytes));
+
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }

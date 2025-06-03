@@ -4,8 +4,11 @@ import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
 import com.itbulls.nadine.spring.springbootdemo.service.EmailService;
+import com.itbulls.nadine.spring.springbootdemo.service.TicketGeneratorService;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
-
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.context.annotation.Lazy;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +39,10 @@ public class BookingController {
     private UserService userService;
 
 
+    @Autowired
+    private TicketGeneratorService ticketGeneratorService;
     // طلب تأكيد الحجز بعد الدفع (POST)
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmBooking(
             @RequestParam Long bookingId,
@@ -54,14 +60,16 @@ public class BookingController {
 
         bookingService.saveBooking(booking);
 
-        // إرسال البريد الإلكتروني لتأكيد الحجز
-        emailService.sendBookingConfirmation(
+        byte[] pdf = ticketGeneratorService.generateTicket(booking);
+
+        emailService.sendBookingConfirmationWithPDF(
             booking.getUser().getEmail(),
             "تم تأكيد الحجز",
-            "تم حجز المقعد " + booking.getSeat().getCode() + " بنجاح."
+            "تم حجز مقعدك بنجاح، تجد التذكرة مرفقة.",
+            pdf
         );
 
-        return ResponseEntity.ok("Booking confirmed successfully and ticket sent to your email.");
+        return ResponseEntity.ok("Booking confirmed and PDF sent to email.");
     }
 
     // إنشاء طلب حجز جديد باستخدام JSON body
@@ -182,4 +190,52 @@ public class BookingController {
 
         return ResponseEntity.ok("Status updated to: " + status);
     }
+    
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/confirm-payment")
+    public ResponseEntity<?> confirmPayment(
+            @RequestParam Long bookingId,
+            @RequestParam String paymentMethod
+    ) {
+        Optional<Booking> optionalBooking = bookingService.getBookingById(bookingId);
+        if (optionalBooking.isEmpty()) {
+            return ResponseEntity.badRequest().body("Booking not found");
+        }
+
+        Booking booking = optionalBooking.get();
+
+        // تحقق إن الحجز للمستخدم الحالي
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        if (!booking.getUser().getEmail().equals(email)) {
+            return ResponseEntity.status(403).body("Unauthorized to confirm this booking.");
+        }
+
+        booking.setConfirmed(true);
+        booking.setPaymentMethod(paymentMethod);
+        booking.setStatus("CONFIRMED");
+        bookingService.saveBooking(booking);
+
+        // يمكن ترسل رسالة أو إشعار
+        return ResponseEntity.ok("Payment confirmed and booking marked as confirmed.");
+    }
+ 
+    
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('USER')")
+    @GetMapping("/{bookingId}/ticket")
+    public ResponseEntity<byte[]> downloadTicket(@PathVariable Long bookingId) {
+        Optional<Booking> optional = bookingService.getBookingById(bookingId);
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Booking booking = optional.get();
+        byte[] pdf = ticketGeneratorService.generateTicket(booking);
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ticket_" + bookingId + ".pdf")
+            .body(pdf);
+    }
+
 }
