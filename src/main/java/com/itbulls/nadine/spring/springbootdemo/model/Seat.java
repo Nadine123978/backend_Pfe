@@ -59,11 +59,12 @@ public class Seat {
         this.available = available;
     }
     
-    @Column(name = "row")
+    @Column(name = "seat_row")  // بدل row
     private Integer row;
 
-    @Column(name = "number")
+    @Column(name = "seat_number")  // بدل number
     private Integer number;
+
 
     // مع getters و setters
     public Integer getRow() {

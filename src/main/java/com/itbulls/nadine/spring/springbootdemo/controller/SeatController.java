@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/seats")
@@ -91,17 +92,45 @@ public class SeatController {
     // تعديل مقعد موجود
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSeat(@PathVariable Long id, @RequestBody Seat updatedSeat) {
-        return seatService.getSeatById(id).map(seat -> {
-            seat.setRow(updatedSeat.getRow());
-            seat.setNumber(updatedSeat.getNumber());
-            seat.setReserved(updatedSeat.isReserved());
-            if (updatedSeat.getSection() != null) {
-                seat.setSection(updatedSeat.getSection());
-            }
-            Seat saved = seatService.save(seat);
-            return ResponseEntity.ok(saved);
-        }).orElseGet(() -> ResponseEntity.badRequest().body("Seat not found"));
+        Optional<Seat> optionalSeat = seatService.getSeatById(id);
+
+        if (optionalSeat.isEmpty()) {
+            return ResponseEntity.badRequest().body("Seat not found");
+        }
+
+        Seat seat = optionalSeat.get();
+        seat.setRow(updatedSeat.getRow());
+        seat.setNumber(updatedSeat.getNumber());
+        seat.setReserved(updatedSeat.isReserved());
+
+        if (updatedSeat.getSection() != null) {
+            seat.setSection(updatedSeat.getSection());
+        }
+
+        Seat saved = seatService.save(seat);
+        return ResponseEntity.ok(saved);
     }
+    
+    @PostMapping("/section/{sectionId}")
+    public ResponseEntity<?> addSeatsToSection(
+            @PathVariable Long sectionId,
+            @RequestBody List<Seat> seats) {
+
+        Section section = sectionService.getSectionById(sectionId).orElse(null);
+        if (section == null) {
+            return ResponseEntity.badRequest().body("Section not found");
+        }
+
+        for (Seat seat : seats) {
+            seat.setSection(section);
+            seatService.save(seat);
+        }
+
+        return ResponseEntity.ok("Seats added to section " + section.getName());
+    }
+
+
+
 
     // حذف مقعد
     @DeleteMapping("/{id}")
