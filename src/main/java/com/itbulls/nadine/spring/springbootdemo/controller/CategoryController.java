@@ -53,20 +53,19 @@ public class CategoryController {
         return ResponseEntity.ok(categoryRepository.findAll());
     }
 
-    // عرض أول 4 تصنيفات رائجة
+ // عرض أول 4 تصنيفات رائجة
     @GetMapping("/trending")
     public ResponseEntity<List<CategoryDTO>> getTrendingCategories() {
         Pageable top4 = PageRequest.of(0, 4);
         List<Category> trending = categoryRepository.findTrendingCategories(top4);
 
-        System.out.println("Trending categories count: " + trending.size());  // DEBUG
-
         List<CategoryDTO> result = trending.stream()
-                .filter(category -> !category.getEvents().isEmpty())
-                .map(category -> new CategoryDTO(category.getId(), category.getName()))
-                .collect(Collectors.toList());
-
-        System.out.println("Filtered trending categories count (with events): " + result.size());  // DEBUG
+            .map(category -> new CategoryDTO(
+                category.getId(),
+                category.getName(),
+                category.getImageUrl() // فقط اسم الصورة أو المسار النسبي
+            ))
+            .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);
     }
