@@ -71,56 +71,54 @@ public class EventController {
     public ResponseEntity<Event> createEvent(
         @RequestParam String title,
         @RequestParam String description,
-        @RequestParam double price,
-        @RequestParam int soldTickets,
-        @RequestParam int totalTickets,
         @RequestParam(required = false) String status,
-        @RequestParam(required = false) String date,
         @RequestParam Long categoryId,
         @RequestParam Long locationId,
         @RequestParam String startDate,
+        @RequestParam String endDate,
         @RequestParam("file") MultipartFile file,
-        @RequestParam(required = false) boolean isFeatured
+        @RequestParam(required = false, defaultValue = "false") boolean isFeatured
     ) throws IOException {
+
         if (status == null || status.isEmpty()) status = "draft";
 
-        LocalDateTime eventDate = null;
-        if (date != null && !date.isEmpty()) {
-            eventDate = LocalDateTime.parse(date);
-        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+
+        LocalDateTime startDateTime = LocalDateTime.parse(startDate, formatter);
+        LocalDateTime endDateTime = LocalDateTime.parse(endDate, formatter);
 
         Event event = new Event();
         event.setTitle(title);
         event.setDescription(description);
-        event.setPrice(price);
-        event.setSoldTickets(soldTickets);
-        event.setTotalTickets(totalTickets);
         event.setStatus(status);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-        LocalDateTime startDateTime = LocalDateTime.parse(startDate, formatter);
         event.setStartDate(startDateTime);
+        event.setEndDate(endDateTime);
         event.setIsFeatured(isFeatured);
 
+        // رفع الملف وحفظه في مجلد uploads
         Path uploadDir = Paths.get("uploads");
         if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
 
         String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
         Path filePath = uploadDir.resolve(fileName);
         Files.write(filePath, file.getBytes());
+
         event.setImageUrl("http://localhost:8081/uploads/" + fileName);
 
         Category category = categoryRepository.findById(categoryId).orElse(null);
         Location location = locationRepository.findById(locationId).orElse(null);
 
-        if (category != null && location != null) {
-            event.setCategory(category);
-            event.setLocation(location);
-        } else {
+        if (category == null || location == null) {
             return ResponseEntity.badRequest().body(null);
         }
 
+        event.setCategory(category);
+        event.setLocation(location);
+
+        // إضافة حفظ event في قاعدة البيانات وإرجاعه
         return ResponseEntity.ok(eventRepository.save(event));
     }
+
 
     // ✅ محمية: فقط admin أو superadmin
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
@@ -130,10 +128,7 @@ public class EventController {
             try {
                 if (updates.containsKey("title")) event.setTitle((String) updates.get("title"));
                 if (updates.containsKey("description")) event.setDescription((String) updates.get("description"));
-                if (updates.containsKey("price")) event.setPrice(Double.parseDouble(updates.get("price").toString()));
                 if (updates.containsKey("status")) event.setStatus((String) updates.get("status"));
-                if (updates.containsKey("soldTickets")) event.setSoldTickets(Integer.parseInt(updates.get("soldTickets").toString()));
-                if (updates.containsKey("totalTickets")) event.setTotalTickets(Integer.parseInt(updates.get("totalTickets").toString()));
                 if (updates.containsKey("startDate")) event.setStartDate(LocalDateTime.parse((String) updates.get("startDate")));
                 if (updates.containsKey("endDate")) event.setEndDate(LocalDateTime.parse((String) updates.get("endDate")));
                 if (updates.containsKey("category")) {
@@ -217,16 +212,25 @@ public class EventController {
     public List<Event> getEventsWithoutFolders() {
         return eventService.getEventsWithoutFolders();
     }
-
     @PostMapping("/{id}/check-availability")
     public ResponseEntity<?> checkAvailability(@PathVariable Long id, @RequestBody CheckAvailabilityRequest request) {
+
         int totalRequested = request.getTotalRequestedSeats();
 
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
 
+        System.out.println("Event ID: " + id);
+        System.out.println("Requested seats: " + totalRequested);
+        System.out.println("Available seats before booking: " + event.getAvailableSeats());
+
         boolean available = totalRequested <= event.getAvailableSeats();
+
         int remainingSeats = event.getAvailableSeats() - totalRequested;
+        if (remainingSeats < 0) remainingSeats = 0;
+
+        System.out.println("Available after check: " + available);
+        System.out.println("Remaining seats after booking: " + remainingSeats);
 
         return ResponseEntity.ok(Map.of(
             "available", available,
@@ -234,4 +238,6 @@ public class EventController {
             "remainingSeats", remainingSeats
         ));
     }
+
+
 }

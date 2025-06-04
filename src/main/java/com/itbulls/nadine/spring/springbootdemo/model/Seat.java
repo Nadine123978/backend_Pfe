@@ -102,6 +102,12 @@ public class Seat {
     public String getColor() {
         return color;
     }
+    
+    public boolean isSold() {
+        // مثال: كرسي يعتبر "مباع" إذا كان محجوز (reserved) أو إذا مرتبط بحجز (booking) غير فارغ
+        return reserved || (booking != null);
+    }
+
 
     public void setColor(String color) {
         this.color = color;

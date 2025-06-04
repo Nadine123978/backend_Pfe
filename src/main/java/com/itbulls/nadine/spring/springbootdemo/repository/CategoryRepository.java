@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-
-	@Query("SELECT c FROM Category c LEFT JOIN c.events e WHERE c.isTrending = true GROUP BY c ORDER BY COUNT(e) DESC")
+	@Query("SELECT c FROM Category c LEFT JOIN c.events e GROUP BY c.id ORDER BY COUNT(e.id) DESC")
 	List<Category> findTrendingCategories(Pageable pageable);
+
 
     long count();
 }

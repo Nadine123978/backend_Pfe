@@ -168,6 +168,9 @@ public class BookingService {
     public void deleteBooking(Long id) {
         bookingRepository.deleteById(id);
     }
+    public boolean hasActiveBooking(Long userId, Long eventId) {
+        return bookingRepository.existsByUserIdAndEventIdAndStatus(userId, eventId, "PENDING");
+    }
 
 
 }

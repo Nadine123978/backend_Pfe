@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "event_images")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class EventImage {
 
     @Id

@@ -3,11 +3,12 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "event")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Event {
 
     @Id
@@ -30,15 +31,12 @@ public class Event {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
-    private Integer totalTickets;
-    private Integer soldTickets;
-    private Double price;
     private String imageUrl;
     private String description;
 
     @Column(name = "is_featured")
     private Boolean isFeatured = false;
-    
+
     @OneToMany(mappedBy = "event", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Booking> bookings;
 
@@ -118,30 +116,6 @@ public class Event {
         this.endDate = endDate;
     }
 
-    public Integer getTotalTickets() {
-        return totalTickets;
-    }
-
-    public void setTotalTickets(Integer totalTickets) {
-        this.totalTickets = totalTickets;
-    }
-
-    public Integer getSoldTickets() {
-        return soldTickets;
-    }
-
-    public void setSoldTickets(Integer soldTickets) {
-        this.soldTickets = soldTickets;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
     public String getImageUrl() {
         return imageUrl;
     }
@@ -165,11 +139,65 @@ public class Event {
     public void setIsFeatured(Boolean isFeatured) {
         this.isFeatured = isFeatured;
     }
-    public int getAvailableSeats() {
-        if (totalTickets == null || soldTickets == null) {
-            return 0;
-        }
-        return totalTickets - soldTickets;
+
+    public List<Booking> getBookings() {
+        return bookings;
     }
 
+    public void setBookings(List<Booking> bookings) {
+        this.bookings = bookings;
+    }
+
+    public List<Section> getSections() {
+        return sections;
+    }
+
+    public void setSections(List<Section> sections) {
+        this.sections = sections;
+    }
+
+    @Transient
+    public Integer getTotalTickets() {
+        if (sections == null || sections.isEmpty()) {
+            return 0;
+        }
+        return sections.stream()
+                .mapToInt(section -> section.getSeats() != null ? section.getSeats().size() : 0)
+                .sum();
+    }
+
+    @Transient
+    public Integer getSoldTickets() {
+        if (sections == null || sections.isEmpty()) {
+            return 0;
+        }
+        return sections.stream()
+                .mapToInt(section -> section.getSeats() != null
+                        ? (int) section.getSeats().stream().filter(seat -> seat.isSold()).count()
+                        : 0)
+                .sum();
+    }
+
+    @Transient
+    public Integer getAvailableSeats() {
+        return getTotalTickets() - getSoldTickets();
+    }
+
+    @Transient
+    public Double getMinPrice() {
+        if (sections == null || sections.isEmpty()) return 0.0;
+        return sections.stream()
+                .mapToDouble(section -> section.getPrice() != null ? section.getPrice() : Double.MAX_VALUE)
+                .min()
+                .orElse(0.0);
+    }
+
+    @Transient
+    public Double getMaxPrice() {
+        if (sections == null || sections.isEmpty()) return 0.0;
+        return sections.stream()
+                .mapToDouble(section -> section.getPrice() != null ? section.getPrice() : 0.0)
+                .max()
+                .orElse(0.0);
+    }
 }

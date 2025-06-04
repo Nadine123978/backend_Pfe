@@ -103,7 +103,7 @@ public class CategoryController {
         Category cat = new Category();
         cat.setName(name);
         cat.setStatus(status); // ✅
-        cat.setImageUrl("/images/" + filename);
+        cat.setImageUrl("/uploads/" + filename);
         categoryRepository.save(cat);
 
         return ResponseEntity.ok(cat);
@@ -134,7 +134,7 @@ public class CategoryController {
                     String filename = UUID.randomUUID() + "_" + imageFile.getOriginalFilename();
                     Path uploadPath = Paths.get("uploads", filename);
                     Files.copy(imageFile.getInputStream(), uploadPath, StandardCopyOption.REPLACE_EXISTING);
-                    cat.setImageUrl("/images/" + filename);
+                    cat.setImageUrl("/uploads/" + filename);
                 }
 
                 Category updated = categoryRepository.save(cat);
