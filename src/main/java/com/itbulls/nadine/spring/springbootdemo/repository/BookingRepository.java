@@ -18,7 +18,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserId(Long userId);
     List<Booking> findByStatusAndExpiresAtBefore(String status, LocalDateTime now);
 
-    
+    boolean existsByUserIdAndEventIdAndStatus(Long userId, Long eventId, String status);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM Booking b WHERE b.user.id = :userId")

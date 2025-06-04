@@ -1,5 +1,6 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
+import com.itbulls.nadine.spring.springbootdemo.dto.BookingDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
@@ -12,15 +13,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.context.annotation.Lazy;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-
 import java.util.Optional;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -31,48 +31,15 @@ public class BookingController {
 	@Autowired
 	private BookingService bookingService;
 
-
     @Autowired
     private EmailService emailService;
-    
+
     @Autowired
     private UserService userService;
 
-
     @Autowired
     private TicketGeneratorService ticketGeneratorService;
-    // طلب تأكيد الحجز بعد الدفع (POST)
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    @PostMapping("/confirm")
-    public ResponseEntity<?> confirmBooking(
-            @RequestParam Long bookingId,
-            @RequestParam String paymentMethod
-    ) {
-        Optional<Booking> optionalBooking = bookingService.getBookingById(bookingId);
-        if (optionalBooking.isEmpty()) {
-            return ResponseEntity.badRequest().body("Booking not found");
-        }
 
-        Booking booking = optionalBooking.get();
-        booking.setConfirmed(true);
-        booking.setPaymentMethod(paymentMethod);
-        booking.setStatus("CONFIRMED");
-
-        bookingService.saveBooking(booking);
-
-        byte[] pdf = ticketGeneratorService.generateTicket(booking);
-
-        emailService.sendBookingConfirmationWithPDF(
-            booking.getUser().getEmail(),
-            "تم تأكيد الحجز",
-            "تم حجز مقعدك بنجاح، تجد التذكرة مرفقة.",
-            pdf
-        );
-
-        return ResponseEntity.ok("Booking confirmed and PDF sent to email.");
-    }
-
-    // إنشاء طلب حجز جديد باستخدام JSON body
     public static class BookingRequest {
         private Long eventId;
 
@@ -84,7 +51,6 @@ public class BookingController {
             this.eventId = eventId;
         }
     }
- 
 
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/create")
@@ -103,9 +69,13 @@ public class BookingController {
                 return ResponseEntity.status(404).body("User not found");
             }
 
-            // نستخدم user.getId() من قاعدة البيانات
+            boolean alreadyHasBooking = bookingService.hasActiveBooking(user.getId(), bookingRequest.getEventId());
+            if (alreadyHasBooking) {
+                return ResponseEntity.badRequest().body("You already have a pending booking for this event.");
+            }
+
             Booking booking = bookingService.createBooking(user.getId(), bookingRequest.getEventId());
-            return ResponseEntity.ok(booking);
+            return ResponseEntity.ok(mapToBookingDTO(booking));
 
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -129,12 +99,14 @@ public class BookingController {
             return ResponseEntity.status(404).body("User not found");
         }
 
-        var bookings = bookingService.getBookingsForUser(user.getId());
+        List<BookingDTO> bookingDTOs = bookingService.getBookingsForUser(user.getId())
+                .stream()
+                .map(this::mapToBookingDTO)
+                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(bookings);
+        return ResponseEntity.ok(bookingDTOs);
     }
 
-   // إلغاء الحجز واسترجاع المقعد
     @PreAuthorize("hasRole('USER')")
     @PutMapping("/cancel/{bookingId}")
     public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId) {
@@ -146,24 +118,23 @@ public class BookingController {
         }
     }
 
-    // جلب تفاصيل حجز معين
     @GetMapping("/{bookingId}")
     public ResponseEntity<?> getBookingById(@PathVariable Long bookingId) {
         Optional<Booking> optional = bookingService.getBookingById(bookingId);
         return optional.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
-    // جلب جميع الحجوزات لمستخدم معين (اختياري)
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getBookingsForUser(@PathVariable Long userId) {
         return ResponseEntity.ok(bookingService.getBookingsForUser(userId));
     }
+
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @GetMapping
     public ResponseEntity<?> getAllBookings() {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
-    
+
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
@@ -190,21 +161,46 @@ public class BookingController {
 
         return ResponseEntity.ok("Status updated to: " + status);
     }
-    
-    @PreAuthorize("hasRole('USER')")
-    @PostMapping("/confirm-payment")
-    public ResponseEntity<?> confirmPayment(
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PostMapping("/confirm")
+    public ResponseEntity<?> confirmBooking(
             @RequestParam Long bookingId,
-            @RequestParam String paymentMethod
-    ) {
+            @RequestParam String paymentMethod) {
         Optional<Booking> optionalBooking = bookingService.getBookingById(bookingId);
         if (optionalBooking.isEmpty()) {
             return ResponseEntity.badRequest().body("Booking not found");
         }
 
         Booking booking = optionalBooking.get();
+        booking.setConfirmed(true);
+        booking.setPaymentMethod(paymentMethod);
+        booking.setStatus("CONFIRMED");
+        bookingService.saveBooking(booking);
 
-        // تحقق إن الحجز للمستخدم الحالي
+        byte[] pdf = ticketGeneratorService.generateTicket(booking);
+
+        emailService.sendBookingConfirmationWithPDF(
+            booking.getUser().getEmail(),
+            "تم تأكيد الحجز",
+            "تم حجز مقعدك بنجاح، تجد التذكرة مرفقة.",
+            pdf
+        );
+
+        return ResponseEntity.ok("Booking confirmed and PDF sent to email.");
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/confirm-payment")
+    public ResponseEntity<?> confirmPayment(
+            @RequestParam Long bookingId,
+            @RequestParam String paymentMethod) {
+        Optional<Booking> optionalBooking = bookingService.getBookingById(bookingId);
+        if (optionalBooking.isEmpty()) {
+            return ResponseEntity.badRequest().body("Booking not found");
+        }
+
+        Booking booking = optionalBooking.get();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
         if (!booking.getUser().getEmail().equals(email)) {
@@ -216,11 +212,9 @@ public class BookingController {
         booking.setStatus("CONFIRMED");
         bookingService.saveBooking(booking);
 
-        // يمكن ترسل رسالة أو إشعار
         return ResponseEntity.ok("Payment confirmed and booking marked as confirmed.");
     }
- 
-    
+
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN') or hasRole('USER')")
     @GetMapping("/{bookingId}/ticket")
     public ResponseEntity<byte[]> downloadTicket(@PathVariable Long bookingId) {
@@ -238,4 +232,38 @@ public class BookingController {
             .body(pdf);
     }
 
+    private BookingDTO mapToBookingDTO(Booking booking) {
+        BookingDTO dto = new BookingDTO();
+
+        dto.setId(booking.getId());
+        dto.setStatus(booking.getStatus());
+        dto.setCreatedAt(booking.getCreatedAt());
+        dto.setExpiresAt(booking.getExpiresAt());
+        dto.setPrice(booking.getPrice());
+        dto.setConfirmed(booking.getConfirmed());
+        dto.setPaymentMethod(booking.getPaymentMethod());
+
+        if (booking.getEvent() != null) {
+            BookingDTO.EventSummaryDTO eventDTO = new BookingDTO.EventSummaryDTO();
+            eventDTO.setId(booking.getEvent().getId());
+            eventDTO.setTitle(booking.getEvent().getTitle());
+            eventDTO.setImageUrl(booking.getEvent().getImageUrl());
+            eventDTO.setStartDate(booking.getEvent().getStartDate());
+            eventDTO.setEndDate(booking.getEvent().getEndDate());
+            if (booking.getEvent().getLocation() != null) {
+                eventDTO.setLocation(booking.getEvent().getLocation().getFullAddress());
+            }
+            dto.setEvent(eventDTO);
+        }
+
+        if (booking.getSeat() != null) {
+            BookingDTO.SeatSummaryDTO seatDTO = new BookingDTO.SeatSummaryDTO();
+            seatDTO.setId(booking.getSeat().getId());
+            seatDTO.setCode(booking.getSeat().getCode());
+            seatDTO.setReserved(booking.getSeat().isReserved());
+            dto.setSeat(seatDTO);
+        }
+
+        return dto;
+    }
 }
