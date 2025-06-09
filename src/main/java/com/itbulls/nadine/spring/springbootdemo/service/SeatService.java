@@ -16,12 +16,16 @@ public class SeatService {
     @Autowired
     private SeatRepository seatRepository;
 
-    public List<Seat> getAllSeats() {
-        return seatRepository.findAll();
+    public Optional<Seat> getSeatById(Long id) {
+        Optional<Seat> seatOpt = seatRepository.findById(id);
+        seatOpt.ifPresent(Seat::updateLockStatus);
+        return seatOpt;
     }
 
-    public Optional<Seat> getSeatById(Long id) {
-        return seatRepository.findById(id);
+    public List<Seat> getAllSeats() {
+        List<Seat> seats = seatRepository.findAll();
+        seats.forEach(Seat::updateLockStatus);
+        return seats;
     }
 
     public Seat save(Seat seat) {

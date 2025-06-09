@@ -2,21 +2,27 @@ package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import com.itbulls.nadine.spring.springbootdemo.controller.BookingController.BookingRequest;
 import com.itbulls.nadine.spring.springbootdemo.dto.CheckAvailabilityRequest;
+import com.itbulls.nadine.spring.springbootdemo.dto.EventWithBookingInfoDTO;
 import com.itbulls.nadine.spring.springbootdemo.dto.SeatDTO;
 import com.itbulls.nadine.spring.springbootdemo.dto.SeatRequest;
 import com.itbulls.nadine.spring.springbootdemo.dto.TicketSectionDTO;
+import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.model.Category;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.Location;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 import com.itbulls.nadine.spring.springbootdemo.model.Section;
+import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.repository.CategoryRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.LocationRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
+import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
 import com.itbulls.nadine.spring.springbootdemo.service.EventService;
+import com.itbulls.nadine.spring.springbootdemo.service.UserService;
 import com.itbulls.nadine.spring.springbootdemo.repository.SectionRepository;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.http.HttpStatus;
@@ -52,6 +58,13 @@ public class EventController {
     private final SeatRepository seatRepository;
     @Autowired
     private EventService eventService;
+    
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private BookingService bookingService;
+
 
     @Autowired
     public EventController(EventRepository eventRepository, SeatRepository seatRepository, EventService eventService) {
@@ -153,8 +166,42 @@ public class EventController {
     }
 
     @GetMapping("/featured")
-    public List<Event> getFeaturedEvents() {
-        return eventRepository.findByIsFeaturedTrue();
+    public ResponseEntity<List<EventWithBookingInfoDTO>> getFeaturedEvents(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = authentication.getName();
+        User user = userService.findByEmail(email);
+
+        List<Event> events = eventRepository.findByIsFeaturedTrue();
+
+        List<EventWithBookingInfoDTO> result = events.stream().map(event -> {
+            Optional<Booking> bookingOpt = bookingService.getBookingByUserIdAndEventId(user.getId(), event.getId());
+
+            EventWithBookingInfoDTO dto = new EventWithBookingInfoDTO();
+            dto.setId(event.getId());
+            dto.setTitle(event.getTitle());
+            dto.setImageUrl(event.getImageUrl());
+            dto.setStartDate(event.getStartDate());
+            dto.setEndDate(event.getEndDate());
+
+            if (bookingOpt.isPresent()) {
+                Booking booking = bookingOpt.get();
+                dto.setAlreadyBooked(true);
+                dto.setBookingStatus(booking.getStatus().name());
+                dto.setBookingExpired(booking.getExpiresAt().isBefore(LocalDateTime.now()));
+                dto.setBookingId(booking.getId());  // ← أضف هالسطر
+            } else {
+                dto.setAlreadyBooked(false);
+                dto.setBookingStatus(null);
+                dto.setBookingExpired(false);
+                dto.setBookingId(null);  // اختياري
+            }
+            return dto;
+        }).toList();
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{eventId}/sections")
@@ -164,10 +211,22 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
-        Event event = eventService.getEventById(id);
-        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
+    public ResponseEntity<?> getEventById(@PathVariable Long id) {
+        try {
+            Optional<Event> event = eventRepository.findById(id);
+            if (event.isPresent()) {
+                return ResponseEntity.ok(event.get());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace(); // سيطبع الخطأ في Console
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Error occurred: " + e.getMessage());
+        }
     }
+
+
 
     @CrossOrigin(origins = "http://localhost:5174")
     @GetMapping("/by-status")
@@ -237,6 +296,12 @@ public class EventController {
             "requestedSeats", totalRequested,
             "remainingSeats", remainingSeats
         ));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
+        eventService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 
 

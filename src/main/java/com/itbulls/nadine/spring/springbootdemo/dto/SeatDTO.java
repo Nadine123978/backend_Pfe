@@ -8,6 +8,27 @@ public class SeatDTO {
 
     // ✅ الحقل الجديد لإرجاع اللون
     private String color;
+    
+    // أضف هذين الحقلين:
+    private Integer row;
+    private Integer number;
+
+    // أضف الـ getters و setters لهما
+    public Integer getRow() {
+        return row;
+    }
+
+    public void setRow(Integer row) {
+        this.row = row;
+    }
+
+    public Integer getNumber() {
+        return number;
+    }
+
+    public void setNumber(Integer number) {
+        this.number = number;
+    }
 
     public SeatDTO() {}
 

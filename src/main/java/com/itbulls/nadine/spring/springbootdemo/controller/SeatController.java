@@ -1,18 +1,27 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
+import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 import com.itbulls.nadine.spring.springbootdemo.model.Section;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
+import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
+import com.itbulls.nadine.spring.springbootdemo.service.EventService;
 import com.itbulls.nadine.spring.springbootdemo.service.SeatService;
 import com.itbulls.nadine.spring.springbootdemo.service.SectionService;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
+
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -32,21 +41,34 @@ public class SeatController {
     @Autowired
     private UserService userService;
 
-    // جلب جميع المقاعد
+    @Autowired
+    private EventService eventService;
+
+    @Autowired
+    private SeatRepository seatRepository;
+
+    // جلب جميع المقاعد وتحديث حالة القفل لكل مقعد
     @GetMapping
     public ResponseEntity<List<Seat>> getAllSeats() {
         List<Seat> seats = seatService.getAllSeats();
+        seats.forEach(Seat::updateLockStatus);
         return ResponseEntity.ok(seats);
     }
 
-    // جلب مقعد حسب الـ id
+    // جلب مقعد محدد مع تحديث حالة القفل
     @GetMapping("/{id}")
     public ResponseEntity<?> getSeatById(@PathVariable Long id) {
-    	return seatService.getSeatById(id)
-    	        .map(ResponseEntity::ok)
-    	        .orElseGet(() -> ResponseEntity.badRequest().body(null)); // لكن هيرجع ResponseEntity<Seat> فارغ
+        Optional<Seat> seatOpt = seatService.getSeatById(id);
 
+        if (seatOpt.isPresent()) {
+            Seat seat = seatOpt.get();
+            seat.updateLockStatus();
+            return ResponseEntity.ok(seat);
+        } else {
+            return ResponseEntity.badRequest().body("Seat not found");
+        }
     }
+
 
     // جلب المقاعد حسب القسم
     @GetMapping("/section/{sectionId}")
@@ -55,7 +77,7 @@ public class SeatController {
         return ResponseEntity.ok(seats);
     }
 
-    // تنفيذ حجز مؤقت (Hold) لمقعد
+    // تنفيذ حجز مؤقت (Hold) لمقعد معين
     @PostMapping("/hold")
     public ResponseEntity<?> holdSeat(
             @RequestParam Long seatId,
@@ -76,9 +98,13 @@ public class SeatController {
         return ResponseEntity.ok(booking);
     }
 
-    // إنشاء مقعد جديد مع ربطه بقسم
+    // إنشاء مقعد جديد وربطه بقسم وحدث معين
     @PostMapping
-    public ResponseEntity<?> createSeat(@RequestParam Long sectionId, @RequestBody Seat seat) {
+    public ResponseEntity<?> createSeat(
+            @RequestParam Long sectionId,
+            @RequestParam Long eventId,
+            @RequestBody Seat seat
+    ) {
         Section section = sectionService.getSectionById(sectionId).orElse(null);
         if (section == null) {
             return ResponseEntity.badRequest().body("Section not found");
@@ -89,7 +115,7 @@ public class SeatController {
         return ResponseEntity.ok(savedSeat);
     }
 
-    // تعديل مقعد موجود
+    // تعديل مقعد موجود حسب المعرف
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSeat(@PathVariable Long id, @RequestBody Seat updatedSeat) {
         Optional<Seat> optionalSeat = seatService.getSeatById(id);
@@ -100,57 +126,50 @@ public class SeatController {
 
         Seat seat = optionalSeat.get();
 
-        // طباعة لفحص القيم القادمة
-        System.out.println("Updating seat id: " + id);
-        System.out.println("New color: " + updatedSeat.getColor());
-        System.out.println("New price: " + updatedSeat.getPrice());
+        System.out.println("Before update - seat row: " + seat.getRow() + ", number: " + seat.getNumber());
 
         seat.setRow(updatedSeat.getRow());
         seat.setNumber(updatedSeat.getNumber());
+
+        System.out.println("After update - seat row: " + seat.getRow() + ", number: " + seat.getNumber());
+
         seat.setReserved(updatedSeat.isReserved());
         seat.setPrice(updatedSeat.getPrice());
         seat.setColor(updatedSeat.getColor());
-        seat.setRow(updatedSeat.getRow());
-        seat.setNumber(updatedSeat.getNumber());
+
         if (updatedSeat.getSection() != null) {
             seat.setSection(updatedSeat.getSection());
         }
+     
+
 
         Seat saved = seatService.save(seat);
-
-        // طباعة للتأكد من القيم المحفوظة
-        System.out.println("Saved seat color: " + saved.getColor());
-        System.out.println("Saved seat price: " + saved.getPrice());
-        System.out.println("Saved seat row: " + saved.getRow());
-        System.out.println("Saved seat number: " + saved.getNumber());
 
         return ResponseEntity.ok(saved);
     }
 
-    
+    // إضافة قائمة كراسي لقسم معين
     @PostMapping("/section/{sectionId}")
     public ResponseEntity<?> addSeatsToSection(
             @PathVariable Long sectionId,
-            @RequestBody List<Seat> seats) {
-
+            @RequestBody List<Seat> seats
+    ) {
         Section section = sectionService.getSectionById(sectionId).orElse(null);
         if (section == null) {
             return ResponseEntity.badRequest().body("Section not found");
         }
 
-        for (Seat seat : seats) {
+        seats.forEach(seat -> {
             seat.setSection(section);
-            seat.setColor(section.getColor());  // ننسخ اللون من القسم للكرسي
-        }
+            seat.setColor(section.getColor());
+        });
 
-        seatService.saveAll(seats);  // نحفظ كل الكراسي دفعة واحدة
+        seatService.saveAll(seats);
 
         return ResponseEntity.ok("Seats added to section " + section.getName());
     }
 
-
-
-    // حذف مقعد
+    // حذف مقعد معين
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSeat(@PathVariable Long id) {
         return seatService.getSeatById(id).map(seat -> {
@@ -159,7 +178,7 @@ public class SeatController {
         }).orElse(ResponseEntity.badRequest().body("Seat not found"));
     }
 
-    // توليد المقاعد لقسم معين
+    // توليد كراسي لقسم معين (يمكن تعديل المنطق داخل الخدمة)
     @PostMapping("/generate")
     public ResponseEntity<?> generateSeatsForSection(@RequestParam Long sectionId) {
         Section section = sectionService.getSectionById(sectionId).orElse(null);
@@ -170,7 +189,7 @@ public class SeatController {
         return ResponseEntity.ok("Seats generated successfully for section " + section.getName());
     }
 
-    // تأكيد حجز المقاعد
+    // تأكيد حجز مجموعة من المقاعد
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmSeats(@RequestBody List<Long> seatIds) {
         for (Long id : seatIds) {
@@ -181,5 +200,49 @@ public class SeatController {
             }
         }
         return ResponseEntity.ok("Seats confirmed successfully");
+    }
+
+    // قفل مجموعة من المقاعد لمدة 5 دقائق
+    @Transactional
+    @PostMapping("/lock")
+    public ResponseEntity<?> lockSeats(@RequestBody List<Long> seatIds) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime lockExpireTime = now.plusMinutes(5);
+
+        List<Seat> seats = seatRepository.findAllById(seatIds);
+
+        for (Seat seat : seats) {
+            if (seat.isReserved() || (seat.isLocked() && seat.getLockedUntil() != null && seat.getLockedUntil().isAfter(now))) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Seat " + seat.getCode() + " is already reserved or locked.");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+            }
+        }
+
+        seats.forEach(seat -> {
+            seat.setLocked(true);
+            seat.setLockedUntil(lockExpireTime);
+        });
+
+        seatRepository.saveAll(seats);
+
+        Map<String, String> success = new HashMap<>();
+        success.put("message", "Seats locked successfully.");
+        return ResponseEntity.ok(success);
+    }
+
+    // فك قفل مجموعة من المقاعد
+    @PostMapping("/unlock")
+    public ResponseEntity<?> unlockSeats(@RequestBody List<Long> seatIds) {
+        List<Seat> seats = seatRepository.findAllById(seatIds);
+
+        seats.forEach(seat -> {
+            seat.setLocked(false);
+            seat.setLockedUntil(null);
+        });
+
+        seatRepository.saveAll(seats);
+
+        return ResponseEntity.ok("Seats unlocked successfully.");
     }
 }

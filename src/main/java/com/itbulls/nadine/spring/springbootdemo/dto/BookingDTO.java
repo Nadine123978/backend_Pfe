@@ -2,10 +2,16 @@ package com.itbulls.nadine.spring.springbootdemo.dto;
 
 import java.time.LocalDateTime;
 
+import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
+
 public class BookingDTO {
 
     private Long id;
-    private String status;
+    private BookingStatus status;
+
+    public BookingStatus getStatus() { return status; }
+    public void setStatus(BookingStatus status) { this.status = status; }
+
     private LocalDateTime createdAt;
     private LocalDateTime expiresAt;
     private Double price;
@@ -25,13 +31,7 @@ public class BookingDTO {
         this.id = id;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
+  
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

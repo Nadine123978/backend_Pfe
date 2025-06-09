@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.service;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
+import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.model.Payment;
 import com.itbulls.nadine.spring.springbootdemo.repository.BookingRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.PaymentRepository;
@@ -28,7 +29,8 @@ public class PaymentService {
 
         Booking booking = optionalBooking.get();
 
-        if (!"HELD".equalsIgnoreCase(booking.getStatus())) {
+        if (booking.getStatus() != BookingStatus.HELD) {
+
             throw new RuntimeException("Cannot pay for booking that is not in HELD status");
         }
 
@@ -42,7 +44,8 @@ public class PaymentService {
         Payment savedPayment = paymentRepository.save(payment);
 
         // Update the booking status
-        booking.setStatus("CONFIRMED");
+        booking.setStatus(BookingStatus.CONFIRMED);
+
         bookingRepository.save(booking);
 
         return savedPayment;

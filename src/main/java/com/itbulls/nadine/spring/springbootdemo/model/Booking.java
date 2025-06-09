@@ -16,8 +16,10 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status;
+
     private LocalDateTime createdAt;
-    private String status;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -33,7 +35,6 @@ public class Booking {
     @JsonManagedReference(value = "seat-booking")
     private Seat seat;
 
-
     private Double price;
 
     @Column(name = "expires_at")
@@ -43,25 +44,8 @@ public class Booking {
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-
-    public void setEvent(Event event) {
-        this.event = event;
-    }
-
-    public Event getEvent() {
-        return event;
-    }
-    
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookingTicket> bookingTickets;
-
-    public List<BookingTicket> getBookingTickets() {
-        return bookingTickets;
-    }
-
-    public void setBookingTickets(List<BookingTicket> bookingTickets) {
-        this.bookingTickets = bookingTickets;
-    }
 
     // Getters and Setters
 
@@ -73,20 +57,20 @@ public class Booking {
         this.id = id;
     }
 
+    public BookingStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(BookingStatus status) {
+        this.status = status;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public User getUser() {
@@ -97,14 +81,6 @@ public class Booking {
         this.user = user;
     }
 
-    public Seat getSeat() {
-        return seat;
-    }
-
-    public void setSeat(Seat seat) {
-        this.seat = seat;
-    }
-    
     public String getPaymentMethod() {
         return paymentMethod;
     }
@@ -121,6 +97,14 @@ public class Booking {
         this.confirmed = confirmed;
     }
 
+    public Seat getSeat() {
+        return seat;
+    }
+
+    public void setSeat(Seat seat) {
+        this.seat = seat;
+    }
+
     public Double getPrice() {
         return price;
     }
@@ -128,7 +112,7 @@ public class Booking {
     public void setPrice(Double price) {
         this.price = price;
     }
-    
+
     public LocalDateTime getExpiresAt() {
         return expiresAt;
     }
@@ -136,4 +120,36 @@ public class Booking {
     public void setExpiresAt(LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
     }
+
+    public Event getEvent() {
+        return event;
+    }
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+
+    public List<BookingTicket> getBookingTickets() {
+        return bookingTickets;
+    }
+
+    public void setBookingTickets(List<BookingTicket> bookingTickets) {
+        this.bookingTickets = bookingTickets;
+    }
+    
+
+    private int numberOfSeats;
+    private LocalDateTime bookingTime;
+
+    @ManyToMany
+    private List<Seat> seats;
+
+    public int getNumberOfSeats() { return numberOfSeats; }
+    public void setNumberOfSeats(int numberOfSeats) { this.numberOfSeats = numberOfSeats; }
+
+    public LocalDateTime getBookingTime() { return bookingTime; }
+    public void setBookingTime(LocalDateTime bookingTime) { this.bookingTime = bookingTime; }
+
+    public List<Seat> getSeats() { return seats; }
+    public void setSeats(List<Seat> seats) { this.seats = seats; }
 }

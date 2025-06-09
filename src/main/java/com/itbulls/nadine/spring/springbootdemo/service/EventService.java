@@ -22,6 +22,9 @@ public class EventService {
         // بدّك تنفّذ logic بيرجع events يلي ما عندن folders
         return eventRepository.findEventsWithoutFolders();
     }
+    public void deleteById(Long id) {
+        eventRepository.deleteById(id);
+    }
    
 }
 

@@ -1,5 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.model;
 
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
@@ -13,9 +15,14 @@ public class Seat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)  // <--- هنا
     private String code;
 
-    private Boolean available = true; 
+   
+    public boolean isAvailable() {
+        return !isSold();
+    }
+
 
     @Column(name = "price")
     private Double price;  // السعر
@@ -40,6 +47,10 @@ public class Seat {
 
     @Column(name = "seat_number")  // بدل number
     private Integer number;
+    
+    // تأكد من وجود علاقة مع Event
+
+
 
     // Getters and setters
 
@@ -59,13 +70,6 @@ public class Seat {
         this.code = code;
     }
 
-    public boolean isAvailable() {
-        return available;
-    }
-
-    public void setAvailable(boolean available) {
-        this.available = available;
-    }
 
     public Integer getRow() {
         return row;
@@ -128,4 +132,37 @@ public class Seat {
     public void setBooking(Booking booking) {
         this.booking = booking;
     }
+    
+    @Column(name = "locked")
+    private Boolean locked = false;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
+    public boolean isLocked() {
+        return locked != null ? locked : false;
+    }
+
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
+    }
+
+    public LocalDateTime getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(LocalDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    // دالة منفصلة لتحديث القفل
+    public void updateLockStatus() {
+        if (locked && lockedUntil != null && LocalDateTime.now().isAfter(lockedUntil)) {
+            locked = false;
+            lockedUntil = null;
+        }
+    }
+
+
 }

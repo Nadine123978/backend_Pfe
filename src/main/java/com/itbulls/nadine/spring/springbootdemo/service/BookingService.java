@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.service;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
+import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
@@ -11,41 +12,48 @@ import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
 
 import jakarta.transaction.Transactional;
 
-import org.hibernate.validator.internal.util.stereotypes.Lazy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
 
 @Service
 public class BookingService {
 
-	    @Autowired
-	    private EmailService emailService; // 👈
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private BookingRepository bookingRepository;
 
     @Autowired
     private SeatService seatService;
-    
+
     @Autowired
     private SeatRepository seatRepository;
 
+    @Autowired
+    private UserRepository userRepository;
 
-   
+    @Autowired
+    private EventRepository eventRepository;
+    
+    public List<Booking> getBookingsForUser(Long userId) {
+        return bookingRepository.findByUserId(userId);
+    }
+    
+    public Optional<Booking> getBookingById(Long id) {
+        return bookingRepository.findById(id);
+    }
+
     public Booking holdSeat(Seat seat, User user, Double price) {
         seatService.markSeatAsReserved(seat);
-        
+
         if (bookingRepository.existsBySeat(seat)) {
             throw new RuntimeException("This seat is already booked.");
         }
@@ -55,23 +63,15 @@ public class BookingService {
         booking.setUser(user);
         booking.setCreatedAt(LocalDateTime.now());
         booking.setExpiresAt(LocalDateTime.now().plusMinutes(15)); // صلاحية 15 دقيقة
-        booking.setStatus("HELD");
+        booking.setStatus(BookingStatus.HELD);  // استخدام enum
         booking.setPrice(price);
-        
-        booking.setExpiresAt(LocalDateTime.now().plusMinutes(10));
 
         return bookingRepository.save(booking);
     }
-   
- // تأكيد الحجز بعد الدفع مع إرسال الإيميل
 
-    @PostMapping("/confirm")
     @Transactional
-    public ResponseEntity<?> confirmBooking(
-            @RequestParam Long bookingId,
-            @RequestParam String paymentMethod
-    ) {
-    	Optional<Booking> optionalBooking = getBookingById(bookingId);
+    public ResponseEntity<?> confirmBooking(Long bookingId, String paymentMethod) {
+        Optional<Booking> optionalBooking = getBookingById(bookingId);
         if (optionalBooking.isEmpty()) {
             return ResponseEntity.badRequest().body("Booking not found");
         }
@@ -79,7 +79,7 @@ public class BookingService {
         Booking booking = optionalBooking.get();
         booking.setConfirmed(true);
         booking.setPaymentMethod(paymentMethod);
-        booking.setStatus("CONFIRMED");
+        booking.setStatus(BookingStatus.CONFIRMED);
 
         saveBooking(booking);
 
@@ -94,83 +94,112 @@ public class BookingService {
         return ResponseEntity.ok("Booking confirmed and ticket sent to your email.");
     }
 
-
     public List<Booking> getExpiredHeldBookings(LocalDateTime now) {
-        return bookingRepository.findByStatusAndExpiresAtBefore("HELD", now);
+        return bookingRepository.findByStatusAndExpiresAtBefore(BookingStatus.HELD, now);
     }
-
 
     public void cancelBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        // افترض أن الحجز يحتوي على مقعد (seat)
         Seat seat = booking.getSeat();
         if (seat != null) {
-            seat.setAvailable(true); // نحرر المقعد
+            seat.setReserved(false);   // تحرير الحجز
+            seat.setLocked(false);     // فك القفل
+            seat.setLockedUntil(null); // إزالة وقت القفل
+            seat.setBooking(null);     // فك الربط مع الحجز
             seatRepository.save(seat);
         }
 
-        bookingRepository.delete(booking); // نحذف الحجز
+        bookingRepository.delete(booking);
     }
 
 
-    public List<Booking> getBookingsForUser(Long userId) {
-        return bookingRepository.findByUserId(userId);
-    }
-
-    public Optional<Booking> getBookingById(Long id) {
-        return bookingRepository.findById(id);
-    }
-    
-    public void saveBooking(Booking booking) {
-        bookingRepository.save(booking);
-    }
-    
-    @Scheduled(fixedRate = 60000) // كل دقيقة
-    public void releaseExpiredHolds() {
-        List<Booking> expired = bookingRepository.findByStatusAndExpiresAtBefore("HELD", LocalDateTime.now());
-        
-        for (Booking booking : expired) {
-            booking.setStatus("CANCELLED");
-            seatService.markSeatAsAvailable(booking.getSeat());
-            bookingRepository.save(booking);
+    public List<Booking> createBooking(Long userId, Long eventId, List<Long> seatIds) {
+        if (hasConfirmedBooking(userId, eventId)) {
+            throw new RuntimeException("You have already booked and confirmed this event.");
         }
-    }
-    
-    @Autowired
-    private UserRepository userRepository;
 
-    @Autowired
-    private EventRepository eventRepository;
-
-    public Booking createBooking(Long userId, Long eventId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Event event = eventRepository.findById(eventId)
-            .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        Booking booking = new Booking();
-        booking.setUser(user);
-        booking.setEvent(event);
-        booking.setStatus("PENDING");
-        booking.setConfirmed(false);
-        
-        booking.setCreatedAt(LocalDateTime.now());
-        booking.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+        List<Seat> seatsToBook = new ArrayList<>();
+        for (Long seatId : seatIds) {
+            Seat seat = seatRepository.findById(seatId)
+                    .orElseThrow(() -> new RuntimeException("Seat not found"));
 
-        return bookingRepository.save(booking);
+            if (seat.isReserved()) {
+                throw new RuntimeException("Seat with ID " + seatId + " is already reserved.");
+            }
+
+            seatsToBook.add(seat);
+        }
+
+        List<Booking> bookings = new ArrayList<>();
+        for (Seat seat : seatsToBook) {
+            Booking booking = new Booking();
+            booking.setUser(user);
+            booking.setEvent(event);
+            booking.setSeat(seat);
+            booking.setStatus(BookingStatus.PENDING);
+            booking.setConfirmed(false);
+            booking.setCreatedAt(LocalDateTime.now());
+            booking.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+
+            bookingRepository.save(booking);
+            bookings.add(booking);
+
+            seat.setReserved(true);
+            seatRepository.save(seat);
+        }
+
+        return bookings;
     }
+
+
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
     }
+
     public void deleteBooking(Long id) {
         bookingRepository.deleteById(id);
     }
-    public boolean hasActiveBooking(Long userId, Long eventId) {
-        return bookingRepository.existsByUserIdAndEventIdAndStatus(userId, eventId, "PENDING");
+
+    public boolean hasConfirmedBooking(Long userId, Long eventId) {
+        return bookingRepository.existsByUserIdAndEventIdAndStatus(userId, eventId, BookingStatus.CONFIRMED);
     }
 
+    public boolean bookingExists(Long userId, Long eventId) {
+        return bookingRepository.existsByUserIdAndEventId(userId, eventId);
+    }
 
+    public Optional<Booking> getBookingByUserIdAndEventId(Long userId, Long eventId) {
+        return bookingRepository.findByUserIdAndEventId(userId, eventId);
+    }
+    
+ // BookingService.java
+    public Booking saveBooking(Booking booking) {
+        return bookingRepository.save(booking);
+    }
+
+    public void confirmPayment(List<Booking> bookings) {
+        for (Booking booking : bookings) {
+            booking.setConfirmed(true);
+            booking.setStatus(BookingStatus.CONFIRMED);
+            bookingRepository.save(booking);
+
+            // يمكنك إرسال إيميل تأكيد لكل حجز
+            String email = booking.getUser().getEmail();
+            String seatCode = booking.getSeat().getCode();
+            String subject = "Booking Payment Confirmed";
+            String body = "Your booking for seat " + seatCode + " is confirmed and paid.";
+
+            emailService.sendBookingConfirmation(email, subject, body);
+        }
+    }
+
+  
 }

@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.repository;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
+import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 
 import jakarta.transaction.Transactional;
@@ -12,11 +13,20 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 	boolean existsBySeat(Seat seat);
     List<Booking> findByUserId(Long userId);
-    List<Booking> findByStatusAndExpiresAtBefore(String status, LocalDateTime now);
+    
+    
+    List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, LocalDateTime time);
+
+    boolean existsByUserIdAndEventIdAndStatus(Long userId, Long eventId, BookingStatus status);
+    boolean existsByUserIdAndEventId(Long userId, Long eventId);
+    
+    @Query("SELECT b FROM Booking b WHERE b.status = :status AND b.confirmed = false AND b.expiresAt < :now")
+    List<Booking> findExpiredUnconfirmedUnpaidBookings(@Param("status") BookingStatus status, @Param("now") LocalDateTime now);
 
     boolean existsByUserIdAndEventIdAndStatus(Long userId, Long eventId, String status);
 
@@ -26,5 +36,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     //void deleteByUserId(@Param("userId") Long userId);
     void deleteByUserId(Long userId);
     long count();
-    long countByStatus(String status); 
+    long countByStatus(BookingStatus status);
+    Optional<Booking> findByUserIdAndEventId(Long userId, Long eventId);
+
+
 }

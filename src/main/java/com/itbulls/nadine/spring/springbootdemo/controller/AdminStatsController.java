@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import com.itbulls.nadine.spring.springbootdemo.dto.AdminStatsDTO;
+import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -37,9 +38,10 @@ public class AdminStatsController {
         stats.setUserCount(userRepository.count());
 
         stats.setTotalBookingCount(bookingRepository.count());
-        stats.setNewBookingCount(bookingRepository.countByStatus("NEW"));
-        stats.setConfirmedBookingCount(bookingRepository.countByStatus("CONFIRMED"));
-        stats.setCancelledBookingCount(bookingRepository.countByStatus("CANCELLED"));
+        stats.setNewBookingCount(bookingRepository.countByStatus(BookingStatus.NEW));
+        stats.setConfirmedBookingCount(bookingRepository.countByStatus(BookingStatus.CONFIRMED));
+        stats.setCancelledBookingCount(bookingRepository.countByStatus(BookingStatus.CANCELLED));
+
 
         stats.setSubscriberCount(subscriberRepository.count());
 
