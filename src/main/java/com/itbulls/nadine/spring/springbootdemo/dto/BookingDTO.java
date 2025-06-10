@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 
@@ -19,7 +20,7 @@ public class BookingDTO {
     private String paymentMethod;
 
     private EventSummaryDTO event;
-    private SeatSummaryDTO seat;
+    private List<SeatSummaryDTO> seats;
 
     // Getters and Setters
 
@@ -81,12 +82,12 @@ public class BookingDTO {
         this.event = event;
     }
 
-    public SeatSummaryDTO getSeat() {
-        return seat;
+    public List<SeatSummaryDTO> getSeats() {
+        return seats;
     }
 
-    public void setSeat(SeatSummaryDTO seat) {
-        this.seat = seat;
+    public void setSeats(List<SeatSummaryDTO> seats) {
+        this.seats = seats;
     }
 
     // ---------------------------------------
@@ -99,6 +100,7 @@ public class BookingDTO {
         private String imageUrl;
         private LocalDateTime startDate;
         private LocalDateTime endDate;
+        
 
         public Long getId() {
             return id;
@@ -155,7 +157,22 @@ public class BookingDTO {
     public static class SeatSummaryDTO {
         private Long id;
         private String code;
-        private Boolean reserved;
+        private boolean reserved;
+        private String color;
+        private Integer row;
+        private Integer number;
+        private Double price;  // أضف السعر هنا
+
+        public Double getPrice() {
+            return price;
+        }
+
+        public void setPrice(Double price) {
+            this.price = price;
+        }
+
+
+        public SeatSummaryDTO() {}
 
         public Long getId() {
             return id;
@@ -173,12 +190,50 @@ public class BookingDTO {
             this.code = code;
         }
 
-        public Boolean getReserved() {
+        public boolean isReserved() {
             return reserved;
         }
 
-        public void setReserved(Boolean reserved) {
+        public void setReserved(boolean reserved) {
             this.reserved = reserved;
         }
+
+        public String getColor() {
+            return color;
+        }
+
+        public void setColor(String color) {
+            this.color = color;
+        }
+
+        public Integer getRow() {
+            return row;
+        }
+
+        public void setRow(Integer row) {
+            this.row = row;
+        }
+
+        public Integer getNumber() {
+            return number;
+        }
+
+        public void setNumber(Integer number) {
+            this.number = number;
+        }
+
+        @Override
+        public String toString() {
+            return "SeatSummaryDTO{" +
+                    "id=" + id +
+                    ", code='" + code + '\'' +
+                    ", reserved=" + reserved +
+                    ", color='" + color + '\'' +
+                    ", row=" + row +
+                    ", number=" + number +
+                          ", price=" + price +
+                    '}';
+        }
     }
+
 }

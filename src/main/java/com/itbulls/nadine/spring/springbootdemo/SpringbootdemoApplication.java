@@ -59,7 +59,7 @@ public class SpringbootdemoApplication {
 	                for (char row : rows) {
 	                    for (int i = 1; i <= seatsPerRow; i++) {
 	                        Seat seat = new Seat();
-	                        seat.setCode("" + row + i);
+	                        seat.setNumber(i);
 	                        seat.setReserved(false);
 	                        seat.setSection(section);
 	                        seatRepository.save(seat);

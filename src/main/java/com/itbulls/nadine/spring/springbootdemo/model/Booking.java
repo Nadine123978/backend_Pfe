@@ -30,11 +30,7 @@ public class Booking {
 
     private Boolean confirmed = false;
 
-    @OneToOne
-    @JoinColumn(name = "seat_id")
-    @JsonManagedReference(value = "seat-booking")
-    private Seat seat;
-
+  
     private Double price;
 
     @Column(name = "expires_at")
@@ -97,13 +93,6 @@ public class Booking {
         this.confirmed = confirmed;
     }
 
-    public Seat getSeat() {
-        return seat;
-    }
-
-    public void setSeat(Seat seat) {
-        this.seat = seat;
-    }
 
     public Double getPrice() {
         return price;
@@ -141,8 +130,9 @@ public class Booking {
     private int numberOfSeats;
     private LocalDateTime bookingTime;
 
-    @ManyToMany
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Seat> seats;
+
 
     public int getNumberOfSeats() { return numberOfSeats; }
     public void setNumberOfSeats(int numberOfSeats) { this.numberOfSeats = numberOfSeats; }

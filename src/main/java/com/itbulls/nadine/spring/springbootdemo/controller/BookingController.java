@@ -35,10 +35,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,52 +116,53 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
         }
 
-        Event event = eventRepository.findById(bookingRequest.getEventId())
-            .orElse(null);
+        Event event = eventRepository.findById(bookingRequest.getEventId()).orElse(null);
         if (event == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Event not found");
         }
 
-        List<Seat> seats = seatRepository.findByIdInAndSection_Event_IdAndReservedFalse(
-            bookingRequest.getSeatIds(), event.getId());
-
-        if (seats.size() != bookingRequest.getSeatIds().size()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body("One or more seats are already reserved or locked.");
-        }
-
+        List<Seat> seats = seatRepository.findAllById(bookingRequest.getSeatIds());
         LocalDateTime now = LocalDateTime.now();
+        LocalDateTime lockUntil = now.plusMinutes(5);
+
+        // تأكد أن الكراسي للحدث نفسه
         for (Seat seat : seats) {
+            if (!seat.getSection().getEvent().getId().equals(event.getId())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid seat for this event");
+            }
+
+            // تأكد إنو الكرسي مش محجوز أو مقفول بعدو
             if (seat.isReserved() || (seat.isLocked() && seat.getLockedUntil() != null && seat.getLockedUntil().isAfter(now))) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Seat " + seat.getCode() + " is already reserved or locked.");
+                        .body("Seat " + seat.getCode() + " is already reserved or locked.");
             }
         }
 
+        // عمل booking بحالة pending
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setEvent(event);
         booking.setSeats(seats);
         booking.setNumberOfSeats(seats.size());
-        booking.setBookingTime(LocalDateTime.now());
-        booking.setStatus(BookingStatus.UNPAID);
-        booking.setExpiresAt(LocalDateTime.now().plusMinutes(10)); // Timeout اقتراح
+        booking.setBookingTime(now);
+        booking.setStatus(BookingStatus.PENDING); // مش confirmed بعد
+        booking.setExpiresAt(lockUntil); // مدة 5 دقايق
 
+        // قفل المقاعد مؤقتًا
         for (Seat seat : seats) {
-            seat.setReserved(true);
-            seat.setBooking(booking);
-            seat.setLocked(false);
-            seat.setLockedUntil(null);
+            seat.setLocked(true);
+            seat.setLockedUntil(lockUntil);
+            seat.setReserved(false);
+            seat.setBooking(booking); // اربط الكرسي بالـ booking
         }
 
-        Booking saved = bookingService.saveBooking(booking);
-        Map<String, Object> response = Map.of(
-            "bookingId", saved.getId(),
-            "message", "Booking created successfully."
-        );
+        bookingRepository.save(booking); // أو bookingService.saveBooking
 
-        return ResponseEntity.ok(response);
-    }  
+        return ResponseEntity.ok(Map.of(
+                "bookingId", booking.getId(),
+                "message", "Booking created and seats locked for 5 minutes. Please complete payment to confirm."
+        ));
+    }
 
 
     @PreAuthorize("hasRole('USER')")
@@ -260,8 +263,6 @@ public class BookingController {
         }
     }
 
-
-
     // بقية الميثودز تبقى كما هي لكن تأكد استخدام BookingStatus enum وعدم استعمال String للحالة.
 
     private BookingDTO mapToBookingDTO(Booking booking) {
@@ -287,13 +288,23 @@ public class BookingController {
             dto.setEvent(eventDTO);
         }
 
-        if (booking.getSeat() != null) {
-            BookingDTO.SeatSummaryDTO seatDTO = new BookingDTO.SeatSummaryDTO();
-            seatDTO.setId(booking.getSeat().getId());
-            seatDTO.setCode(booking.getSeat().getCode());
-            seatDTO.setReserved(booking.getSeat().isReserved());
-            dto.setSeat(seatDTO);
+        if (booking.getSeats() != null && !booking.getSeats().isEmpty()) {
+            List<BookingDTO.SeatSummaryDTO> seatDTOs = new ArrayList<>();
+
+            for (Seat seat : booking.getSeats()) {
+                BookingDTO.SeatSummaryDTO seatDTO = new BookingDTO.SeatSummaryDTO();
+                seatDTO.setId(seat.getId());
+                seatDTO.setCode(seat.getCode());
+                seatDTO.setReserved(seat.isReserved());
+                seatDTO.setColor(seat.getColor());
+                seatDTO.setRow(seat.getRow());
+                seatDTO.setNumber(seat.getNumber());
+                seatDTOs.add(seatDTO);
+            }
+
+            dto.setSeats(seatDTOs);  // <-- الصحيح
         }
+
 
         return dto;
     }
@@ -434,19 +445,27 @@ public class BookingController {
         dto.setPrice(booking.getPrice());
         dto.setConfirmed(booking.getConfirmed());
         dto.setPaymentMethod(booking.getPaymentMethod());
-        System.out.println("Seat in booking: " + booking.getSeat());
+      
 
 
         // Seat info
-        if (booking.getSeat() != null) {
-            BookingDTO.SeatSummaryDTO seatDTO = new BookingDTO.SeatSummaryDTO();
-            seatDTO.setId(booking.getSeat().getId());
-            seatDTO.setCode(booking.getSeat().getCode());
-            seatDTO.setReserved(booking.getSeat().isReserved());
-            dto.setSeat(seatDTO);
-            System.out.println("Seat info set: " + seatDTO);
+        if (booking.getSeats() != null && !booking.getSeats().isEmpty()) {
+            List<BookingDTO.SeatSummaryDTO> seatDTOs = booking.getSeats().stream().map(seat -> {
+                BookingDTO.SeatSummaryDTO dtoSeat = new BookingDTO.SeatSummaryDTO();
+                dtoSeat.setId(seat.getId());
+                dtoSeat.setCode(seat.getCode());
+                dtoSeat.setReserved(seat.isReserved());
+                dtoSeat.setColor(seat.getColor()); // إذا عندك color
+                dtoSeat.setRow(seat.getRow());
+                dtoSeat.setPrice(seat.getPrice());
+                dtoSeat.setNumber(seat.getNumber());
+                return dtoSeat;
+            }).collect(Collectors.toList());
+
+            dto.setSeats(seatDTOs);
+            System.out.println("Seats info set: " + seatDTOs);
         } else {
-            System.out.println("Booking has no seat assigned.");
+            System.out.println("Booking has no seats assigned.");
         }
 
         // Event info

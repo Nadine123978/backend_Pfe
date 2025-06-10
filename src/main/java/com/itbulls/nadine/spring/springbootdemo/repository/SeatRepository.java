@@ -1,7 +1,11 @@
 package com.itbulls.nadine.spring.springbootdemo.repository;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
+
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -31,6 +35,11 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<Seat> findAvailableSeatsByEventId(@Param("eventId") Long eventId);
 
     List<Seat> findByIdInAndSection_Event_IdAndReservedFalse(List<Long> seatIds, Long eventId);
+    
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Seat s WHERE s.id IN :ids")
+    List<Seat> findSeatsWithLock(@Param("ids") List<Long> ids);
+
 
 }
 

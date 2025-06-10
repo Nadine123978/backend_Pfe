@@ -15,76 +15,103 @@ public class Seat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)  // <--- هنا
-    private String code;
-
-   
-    public boolean isAvailable() {
-        return !isSold();
-    }
-
+    @Column(unique = true)
+    private String code;  // سيتم توليده تلقائيًا من row و number
 
     @Column(name = "price")
-    private Double price;  // السعر
+    private Double price;
 
     @Column(name = "is_reserved", nullable = false)
-    private boolean reserved = false; 
+    private boolean reserved = false;
 
-    @Column(name = "seat_color")   // أضفت خاصية اللون هنا
+    @Column(name = "seat_color")
     private String color;
+
+    @Column(name = "seat_row")
+    private Integer row;
+
+    @Column(name = "seat_number")
+    private Integer number;
 
     @ManyToOne
     @JoinColumn(name = "section_id")
     @JsonBackReference(value = "section-seat")
     private Section section;
 
-    @OneToOne(mappedBy = "seat")
+    @ManyToOne
+    @JoinColumn(name = "booking_id")
     @JsonBackReference(value = "seat-booking")
     private Booking booking;
 
-    @Column(name = "seat_row")  // بدل row
-    private Integer row;
+    @Column(name = "locked")
+    private Boolean locked = false;
 
-    @Column(name = "seat_number")  // بدل number
-    private Integer number;
-    
-    // تأكد من وجود علاقة مع Event
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
 
+    // ==============================
+    // Logic
+    // ==============================
 
+    public boolean isAvailable() {
+        return !isSold();
+    }
 
-    // Getters and setters
+    public boolean isSold() {
+        return reserved || (booking != null);
+    }
+
+    public boolean isLocked() {
+        updateLockStatus();
+        return Boolean.TRUE.equals(locked);
+    }
+
+    public void updateLockStatus() {
+        if (locked && lockedUntil != null && LocalDateTime.now().isAfter(lockedUntil)) {
+            locked = false;
+            lockedUntil = null;
+        }
+    }
+
+    // دالة توليد الكود التلقائي
+    private void generateCode() {
+        if (row != null && number != null) {
+            this.code = row + "-" + number;
+        }
+    }
+
+    // ==============================
+    // Setters with logic
+    // ==============================
+
+    public void setRow(Integer row) {
+        this.row = row;
+        generateCode();
+    }
+
+    public void setNumber(Integer number) {
+        this.number = number;
+        generateCode();
+    }
+
+    // ==============================
+    // باقي الـ Getters & Setters
+    // ==============================
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getCode() {
         return code;
     }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-
     public Integer getRow() {
         return row;
     }
 
-    public void setRow(Integer row) {
-        this.row = row;
-    }
-
     public Integer getNumber() {
         return number;
-    }
-
-    public void setNumber(Integer number) {
-        this.number = number;
     }
 
     public Double getPrice() {
@@ -106,12 +133,6 @@ public class Seat {
     public String getColor() {
         return color;
     }
-    
-    public boolean isSold() {
-        // مثال: كرسي يعتبر "مباع" إذا كان محجوز (reserved) أو إذا مرتبط بحجز (booking) غير فارغ
-        return reserved || (booking != null);
-    }
-
 
     public void setColor(String color) {
         this.color = color;
@@ -132,17 +153,6 @@ public class Seat {
     public void setBooking(Booking booking) {
         this.booking = booking;
     }
-    
-    @Column(name = "locked")
-    private Boolean locked = false;
-
-    @Column(name = "locked_until")
-    private LocalDateTime lockedUntil;
-
-    public boolean isLocked() {
-        return locked != null ? locked : false;
-    }
-
 
     public void setLocked(boolean locked) {
         this.locked = locked;
@@ -155,14 +165,4 @@ public class Seat {
     public void setLockedUntil(LocalDateTime lockedUntil) {
         this.lockedUntil = lockedUntil;
     }
-
-    // دالة منفصلة لتحديث القفل
-    public void updateLockStatus() {
-        if (locked && lockedUntil != null && LocalDateTime.now().isAfter(lockedUntil)) {
-            locked = false;
-            lockedUntil = null;
-        }
-    }
-
-
 }

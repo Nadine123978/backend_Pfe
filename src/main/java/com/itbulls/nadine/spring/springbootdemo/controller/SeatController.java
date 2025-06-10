@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,22 +127,20 @@ public class SeatController {
 
         Seat seat = optionalSeat.get();
 
-        System.out.println("Before update - seat row: " + seat.getRow() + ", number: " + seat.getNumber());
-
         seat.setRow(updatedSeat.getRow());
         seat.setNumber(updatedSeat.getNumber());
-
-        System.out.println("After update - seat row: " + seat.getRow() + ", number: " + seat.getNumber());
-
         seat.setReserved(updatedSeat.isReserved());
         seat.setPrice(updatedSeat.getPrice());
         seat.setColor(updatedSeat.getColor());
 
-        if (updatedSeat.getSection() != null) {
-            seat.setSection(updatedSeat.getSection());
+        if (updatedSeat.getSection() != null && updatedSeat.getSection().getId() != null) {
+            Optional<Section> sectionOpt = sectionService.getSectionById(updatedSeat.getSection().getId());
+            if (sectionOpt.isPresent()) {
+                seat.setSection(sectionOpt.get());
+            } else {
+                return ResponseEntity.badRequest().body("Section not found");
+            }
         }
-     
-
 
         Seat saved = seatService.save(seat);
 
@@ -149,8 +148,8 @@ public class SeatController {
     }
 
     // إضافة قائمة كراسي لقسم معين
-    @PostMapping("/section/{sectionId}")
-    public ResponseEntity<?> addSeatsToSection(
+    @PostMapping("/section/{sectionId}/generate")
+    public ResponseEntity<?> generateSeatsInSection(
             @PathVariable Long sectionId,
             @RequestBody List<Seat> seats
     ) {
@@ -159,15 +158,12 @@ public class SeatController {
             return ResponseEntity.badRequest().body("Section not found");
         }
 
-        seats.forEach(seat -> {
-            seat.setSection(section);
-            seat.setColor(section.getColor());
-        });
-
+        seats.forEach(seat -> seat.setSection(section)); // ربط كل مقعد بالقسم
         seatService.saveAll(seats);
 
-        return ResponseEntity.ok("Seats added to section " + section.getName());
+        return ResponseEntity.ok("Generated " + seats.size() + " seats in section " + section.getName());
     }
+
 
     // حذف مقعد معين
     @DeleteMapping("/{id}")
@@ -190,17 +186,32 @@ public class SeatController {
     }
 
     // تأكيد حجز مجموعة من المقاعد
+    @Transactional
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmSeats(@RequestBody List<Long> seatIds) {
+        LocalDateTime now = LocalDateTime.now();
+
         for (Long id : seatIds) {
             Seat seat = seatService.getSeatById(id).orElse(null);
-            if (seat != null && !seat.isReserved()) {
-                seat.setReserved(true);
-                seatService.save(seat);
+            if (seat == null) continue;
+
+            if (seat.isReserved()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Seat already reserved.");
             }
+
+            if (!seat.isLocked() || seat.getLockedUntil() == null || seat.getLockedUntil().isBefore(now)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Seat lock expired or not locked.");
+            }
+
+            seat.setReserved(true);
+            seat.setLocked(false);  // remove lock
+            seat.setLockedUntil(null);
+            seatService.save(seat);
         }
+
         return ResponseEntity.ok("Seats confirmed successfully");
     }
+
 
     // قفل مجموعة من المقاعد لمدة 5 دقائق
     @Transactional
