@@ -55,20 +55,30 @@ public class CategoryController {
 
  // عرض أول 4 تصنيفات رائجة
     @GetMapping("/trending")
-    public ResponseEntity<List<CategoryDTO>> getTrendingCategories() {
-        Pageable top4 = PageRequest.of(0, 4);
-        List<Category> trending = categoryRepository.findTrendingCategories(top4);
+    public ResponseEntity<List<CategoryDTO>> getTrendingCategories(
+            @RequestParam(value = "limit", required = false) Integer limit) {
+
+        List<Category> trending;
+
+        if (limit != null && limit > 0) {
+            Pageable pageable = PageRequest.of(0, limit);
+            trending = categoryRepository.findTrendingCategories(pageable);
+        } else {
+            // إذا ما في limit رجّع الكل
+            trending = categoryRepository.findTrendingCategories(); 
+        }
 
         List<CategoryDTO> result = trending.stream()
             .map(category -> new CategoryDTO(
                 category.getId(),
                 category.getName(),
-                category.getImageUrl() // فقط اسم الصورة أو المسار النسبي
+                category.getImageUrl()
             ))
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);
     }
+
 
     // عرض الأحداث حسب التصنيف
     @GetMapping("/{id}/events")

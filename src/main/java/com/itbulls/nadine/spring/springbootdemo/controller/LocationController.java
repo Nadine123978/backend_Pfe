@@ -1,30 +1,37 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import com.itbulls.nadine.spring.springbootdemo.model.Location;
 import com.itbulls.nadine.spring.springbootdemo.repository.LocationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.http.ResponseEntity;
 
-import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/locations")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") // لو عم تشتغلي محلي على localhost:3000
 public class LocationController {
 
     @Autowired
     private LocationRepository locationRepository;
 
     @PostMapping
-    public Location createLocation(@RequestBody Location location) {
-        return locationRepository.save(location);
+    public ResponseEntity<?> addLocation(@RequestBody Location location) {
+        if (locationRepository.findByVenueName(location.getVenueName()).isPresent()) {
+            return ResponseEntity
+                     .badRequest()
+                     .body("اسم المكان موجود مسبقاً، الرجاء اختيار اسم آخر");
+        }
+        Location savedLocation = locationRepository.save(location);
+        return ResponseEntity.ok(savedLocation);
     }
 
-    
+
+    // (اختياري) تجيب كل المواقع
     @GetMapping
-    public ResponseEntity<List<Location>> getLocations() {
+    public ResponseEntity<?> getAllLocations() {
         return ResponseEntity.ok(locationRepository.findAll());
     }
 }

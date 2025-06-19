@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.model;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -89,6 +90,15 @@ public class Section {
 
     public void setSeats(List<Seat> seats) {
         this.seats = seats;
+    }
+    
+    public List<Seat> getRequestedSeats() {
+        if (seats == null) {
+            return List.of();  // ترجع قائمة فاضية لو ما في مقاعد
+        }
+        return seats.stream()
+            .filter(seat -> seat.isReserved() || seat.isLocked()) // حسب منطق الطلب عندك
+            .collect(Collectors.toList());
     }
 }
 

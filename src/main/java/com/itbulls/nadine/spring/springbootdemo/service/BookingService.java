@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
@@ -54,12 +55,12 @@ public class BookingService {
     public Booking holdSeat(Seat seat, User user, Double price) {
         seatService.markSeatAsReserved(seat);
 
-        if (bookingRepository.existsBySeat(seat)) {
+        if (bookingRepository.existsBySeatsContaining(seat)) {
             throw new RuntimeException("This seat is already booked.");
         }
 
         Booking booking = new Booking();
-        booking.setSeat(seat);
+        booking.setSeats(List.of(seat));
         booking.setUser(user);
         booking.setCreatedAt(LocalDateTime.now());
         booking.setExpiresAt(LocalDateTime.now().plusMinutes(15)); // صلاحية 15 دقيقة
@@ -85,9 +86,14 @@ public class BookingService {
 
         // إرسال الإيميل
         String email = booking.getUser().getEmail();
-        String seatCode = booking.getSeat().getCode();
+        List<Seat> seats = booking.getSeats();
+
+        String seatCodes = seats.stream()
+                                .map(Seat::getCode)
+                                .collect(Collectors.joining(", "));
+
         String subject = "Booking Confirmation";
-        String body = "Your booking is confirmed. Seat code: " + seatCode;
+        String body = "Your booking is confirmed. Seat codes: " + seatCodes;
 
         emailService.sendBookingConfirmation(email, subject, body);
 
@@ -102,13 +108,15 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-        Seat seat = booking.getSeat();
-        if (seat != null) {
-            seat.setReserved(false);   // تحرير الحجز
-            seat.setLocked(false);     // فك القفل
-            seat.setLockedUntil(null); // إزالة وقت القفل
-            seat.setBooking(null);     // فك الربط مع الحجز
-            seatRepository.save(seat);
+        List<Seat> seats = booking.getSeats();
+        if (seats != null) {
+            for (Seat seat : seats) {
+                seat.setReserved(false);   // تحرير الحجز
+                seat.setLocked(false);     // فك القفل
+                seat.setLockedUntil(null); // إزالة وقت القفل
+                seat.setBooking(null);     // فك الربط مع الحجز
+                seatRepository.save(seat);
+            }
         }
 
         bookingRepository.delete(booking);
@@ -143,7 +151,7 @@ public class BookingService {
             Booking booking = new Booking();
             booking.setUser(user);
             booking.setEvent(event);
-            booking.setSeat(seat);
+            booking.setSeats(List.of(seat)); // لو حددت مقعد واحد
             booking.setStatus(BookingStatus.PENDING);
             booking.setConfirmed(false);
             booking.setCreatedAt(LocalDateTime.now());
@@ -176,10 +184,16 @@ public class BookingService {
         return bookingRepository.existsByUserIdAndEventId(userId, eventId);
     }
 
-    public Optional<Booking> getBookingByUserIdAndEventId(Long userId, Long eventId) {
+    public List<Booking> getBookingsByUserIdAndEventId(Long userId, Long eventId) {
         return bookingRepository.findByUserIdAndEventId(userId, eventId);
     }
     
+    public Optional<Booking> getBookingByUserIdAndEventIdOptional(Long userId, Long eventId) {
+       List<Booking> bookings = bookingRepository.findByUserIdAndEventId(userId, eventId);
+       return bookings.stream().findFirst();
+   }
+
+
  // BookingService.java
     public Booking saveBooking(Booking booking) {
         return bookingRepository.save(booking);
@@ -193,9 +207,12 @@ public class BookingService {
 
             // يمكنك إرسال إيميل تأكيد لكل حجز
             String email = booking.getUser().getEmail();
-            String seatCode = booking.getSeat().getCode();
+            List<String> seatCodes = booking.getSeats().stream()
+            	    .map(Seat::getCode)
+            	    .collect(Collectors.toList());
+
             String subject = "Booking Payment Confirmed";
-            String body = "Your booking for seat " + seatCode + " is confirmed and paid.";
+            String body = "Your booking for seat " + seatCodes + " is confirmed and paid.";
 
             emailService.sendBookingConfirmation(email, subject, body);
         }

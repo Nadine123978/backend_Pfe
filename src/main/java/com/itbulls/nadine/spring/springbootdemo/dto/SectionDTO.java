@@ -7,17 +7,21 @@ public class SectionDTO {
     private String name;
     private Double price;
     private String color;
-    private Long eventId; // هذا المتغير مفقود
+    private Long eventId;
+    private int rows; // ✅ جديد
+    private int cols; // ✅ جديد
     private List<SeatDTO> seats;
 
     public SectionDTO() {}
 
-    public SectionDTO(Long id, String name, Double price, String color, Long eventId, List<SeatDTO> seats) {
+    public SectionDTO(Long id, String name, Double price, String color, Long eventId, int rows, int cols, List<SeatDTO> seats) {
         this.id = id;
         this.name = name;
         this.price = price;
         this.color = color;
         this.eventId = eventId;
+        this.rows = rows;
+        this.cols = cols;
         this.seats = seats;
     }
 
@@ -59,6 +63,22 @@ public class SectionDTO {
 
     public void setEventId(Long eventId) {
         this.eventId = eventId;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
+    public void setRows(int rows) {
+        this.rows = rows;
+    }
+
+    public int getCols() {
+        return cols;
+    }
+
+    public void setCols(int cols) {
+        this.cols = cols;
     }
 
     public List<SeatDTO> getSeats() {

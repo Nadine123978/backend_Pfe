@@ -123,7 +123,10 @@ public class BookingController {
 
         List<Seat> seats = seatRepository.findAllById(bookingRequest.getSeatIds());
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime lockUntil = now.plusMinutes(5);
+
+        // هنا صرنا نضيف 24 ساعة بدل 5 دقائق
+        LocalDateTime lockUntil = now.plusMinutes(1);
+  
 
         // تأكد أن الكراسي للحدث نفسه
         for (Seat seat : seats) {
@@ -131,36 +134,37 @@ public class BookingController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid seat for this event");
             }
 
-            // تأكد إنو الكرسي مش محجوز أو مقفول بعدو
             if (seat.isReserved() || (seat.isLocked() && seat.getLockedUntil() != null && seat.getLockedUntil().isAfter(now))) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body("Seat " + seat.getCode() + " is already reserved or locked.");
             }
         }
 
-        // عمل booking بحالة pending
         Booking booking = new Booking();
         booking.setUser(user);
         booking.setEvent(event);
         booking.setSeats(seats);
+        booking.setCreatedAt(LocalDateTime.now());
         booking.setNumberOfSeats(seats.size());
         booking.setBookingTime(now);
         booking.setStatus(BookingStatus.PENDING); // مش confirmed بعد
-        booking.setExpiresAt(lockUntil); // مدة 5 دقايق
+        booking.setExpiresAt(lockUntil); // مدة 24 ساعة
 
-        // قفل المقاعد مؤقتًا
+        double totalPrice = seats.stream().mapToDouble(Seat::getPrice).sum();
+        booking.setPrice(totalPrice);
+
         for (Seat seat : seats) {
             seat.setLocked(true);
             seat.setLockedUntil(lockUntil);
             seat.setReserved(false);
-            seat.setBooking(booking); // اربط الكرسي بالـ booking
+            seat.setBooking(booking);
         }
 
-        bookingRepository.save(booking); // أو bookingService.saveBooking
+        bookingRepository.save(booking);
 
         return ResponseEntity.ok(Map.of(
                 "bookingId", booking.getId(),
-                "message", "Booking created and seats locked for 5 minutes. Please complete payment to confirm."
+                "message", "Booking created and seats locked for 24 hours. Please complete payment to confirm."
         ));
     }
 
@@ -248,14 +252,18 @@ public class BookingController {
                 return ResponseEntity.status(404).body("User not found");
             }
 
-            Optional<Booking> optionalBooking = bookingService.getBookingByUserIdAndEventId(user.getId(), eventId);
-            if (optionalBooking.isPresent()) {
-                BookingDTO dto = mapToBookingDTO(optionalBooking.get());
-                System.out.println("Booking found: " + dto);
-                return ResponseEntity.ok(dto);
+            List<Booking> bookings = bookingService.getBookingsByUserIdAndEventId(user.getId(), eventId);
+
+            if (bookings.isEmpty()) {
+                System.out.println("No bookings found for user and event");
+                return ResponseEntity.ok().body(new ArrayList<>()); // empty list
             } else {
-                System.out.println("No booking found for user and event");
-                return ResponseEntity.ok().body(null);
+                List<BookingDTO> bookingDTOs = bookings.stream()
+                    .map(this::mapToBookingDTO)
+                    .collect(Collectors.toList());
+
+                System.out.println("Found bookings: " + bookingDTOs.size());
+                return ResponseEntity.ok(bookingDTOs);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -491,6 +499,29 @@ public class BookingController {
 
         return dto;
     }
+    
+    @GetMapping("/mybookings")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> getMyBookings() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+
+        String email = auth.getName();
+        User user = userService.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found");
+        }
+
+        List<Booking> bookings = bookingService.getBookingsForUser(user.getId());
+        List<BookingDTO> bookingDTOs = bookings.stream()
+                                              .map(this::mapToBookingDTO)
+                                              .collect(Collectors.toList());
+
+        return ResponseEntity.ok(bookingDTOs);
+    }
+    
     }
 
 

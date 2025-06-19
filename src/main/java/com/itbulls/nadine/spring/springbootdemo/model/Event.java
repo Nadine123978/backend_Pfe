@@ -34,9 +34,6 @@ public class Event {
     private String imageUrl;
     private String description;
 
-    @Column(name = "is_featured")
-    private Boolean isFeatured = false;
-
     @OneToMany(mappedBy = "event", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Booking> bookings;
 
@@ -57,6 +54,22 @@ public class Event {
             this.status = "draft";
         }
     }
+
+    @PreUpdate
+    public void updateStatus() {
+        if (startDate != null && endDate != null) {
+            if (startDate.isAfter(LocalDateTime.now())) {
+                this.status = "upcoming";
+            } else if (endDate.isBefore(LocalDateTime.now())) {
+                this.status = "past";
+            } else {
+                this.status = "active";
+            }
+        } else {
+            this.status = "draft";
+        }
+    }
+
 
     // Getters & Setters
 
@@ -132,13 +145,6 @@ public class Event {
         this.description = description;
     }
 
-    public Boolean getIsFeatured() {
-        return isFeatured;
-    }
-
-    public void setIsFeatured(Boolean isFeatured) {
-        this.isFeatured = isFeatured;
-    }
 
     public List<Booking> getBookings() {
         return bookings;

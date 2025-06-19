@@ -5,39 +5,21 @@ public class SeatDTO {
     private String code;
     private boolean reserved;
     private int requestedSeats;
-
-    // ✅ الحقل الجديد لإرجاع اللون
     private String color;
-    
-    // أضف هذين الحقلين:
     private Integer row;
     private Integer number;
 
-    // أضف الـ getters و setters لهما
-    public Integer getRow() {
-        return row;
+    public SeatDTO() {
     }
 
-    public void setRow(Integer row) {
-        this.row = row;
-    }
-
-    public Integer getNumber() {
-        return number;
-    }
-
-    public void setNumber(Integer number) {
-        this.number = number;
-    }
-
-    public SeatDTO() {}
-
-    public SeatDTO(Long id, String code, boolean reserved, int requestedSeats, String color) {
+    public SeatDTO(Long id, String code, boolean reserved, int requestedSeats, String color, Integer row, Integer number) {
         this.id = id;
         this.code = code;
         this.reserved = reserved;
         this.requestedSeats = requestedSeats;
         this.color = color;
+        this.row = row;
+        this.number = number;
     }
 
     public Long getId() {
@@ -72,12 +54,27 @@ public class SeatDTO {
         this.requestedSeats = requestedSeats;
     }
 
-    // ✅ Getter و Setter للـ color
     public String getColor() {
         return color;
     }
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public Integer getRow() {
+        return row;
+    }
+
+    public void setRow(Integer row) {
+        this.row = row;
+    }
+
+    public Integer getNumber() {
+        return number;
+    }
+
+    public void setNumber(Integer number) {
+        this.number = number;
     }
 }

@@ -3,28 +3,25 @@ package com.itbulls.nadine.spring.springbootdemo.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "location")
+@Table(name = "locations")
 public class Location {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @Column(unique = true)
     private String venueName;
-    private String city;
-    private String state;
-    private String country;
-    private String fullAddress;
 
-    // ✅ Constructors (optional)
+    private Double latitude;
+    private Double longitude;
+
+    // ✅ Constructors
     public Location() {}
 
-    public Location(String venueName, String city, String state, String country, String fullAddress) {
+    public Location(String venueName, Double latitude, Double longitude) {
         this.venueName = venueName;
-        this.city = city;
-        this.state = state;
-        this.country = country;
-        this.fullAddress = fullAddress;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     // ✅ Getters & Setters
@@ -40,35 +37,19 @@ public class Location {
         this.venueName = venueName;
     }
 
-    public String getCity() {
-        return city;
+    public Double getLatitude() {
+        return latitude;
     }
 
-    public void setCity(String city) {
-        this.city = city;
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
     }
 
-    public String getState() {
-        return state;
+    public Double getLongitude() {
+        return longitude;
     }
 
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public String getFullAddress() {
-        return fullAddress;
-    }
-
-    public void setFullAddress(String fullAddress) {
-        this.fullAddress = fullAddress;
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
     }
 }

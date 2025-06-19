@@ -19,9 +19,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 boolean existsBySeatsContaining(Seat seat);
 
     List<Booking> findByUserId(Long userId);
-    
-    
-    List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, LocalDateTime time);
+    List<Booking> findByStatusAndExpiresAtBefore(BookingStatus status, LocalDateTime dateTime);
 
     boolean existsByUserIdAndEventIdAndStatus(Long userId, Long eventId, BookingStatus status);
     boolean existsByUserIdAndEventId(Long userId, Long eventId);
@@ -29,7 +27,6 @@ boolean existsBySeatsContaining(Seat seat);
     @Query("SELECT b FROM Booking b WHERE b.status = :status AND b.confirmed = false AND b.expiresAt < :now")
     List<Booking> findExpiredUnconfirmedUnpaidBookings(@Param("status") BookingStatus status, @Param("now") LocalDateTime now);
 
-    boolean existsByUserIdAndEventIdAndStatus(Long userId, Long eventId, String status);
 
     @Modifying
     @Transactional
@@ -38,7 +35,7 @@ boolean existsBySeatsContaining(Seat seat);
     void deleteByUserId(Long userId);
     long count();
     long countByStatus(BookingStatus status);
-    Optional<Booking> findByUserIdAndEventId(Long userId, Long eventId);
+    List<Booking> findByUserIdAndEventId(Long userId, Long eventId);
 
 
 }

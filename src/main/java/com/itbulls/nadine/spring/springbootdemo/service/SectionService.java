@@ -42,20 +42,41 @@ public class SectionService {
             dto.setName(section.getName());
             dto.setPrice(section.getPrice());
             dto.setColor(section.getColor());
+            dto.setEventId(section.getEvent() != null ? section.getEvent().getId() : null);
 
             List<SeatDTO> seatDTOs = section.getSeats().stream().map(seat -> {
                 SeatDTO seatDTO = new SeatDTO();
                 seatDTO.setId(seat.getId());
                 seatDTO.setCode(seat.getCode());
                 seatDTO.setReserved(seat.isReserved());
+                seatDTO.setReserved(seat.isReserved()); // هذا صحيح وجاهز عندك
+                seatDTO.setColor(seat.getColor());
+                seatDTO.setRow(seat.getRow());
+                seatDTO.setNumber(seat.getNumber());
+                System.out.println("Seat ID: " + seat.getId() + " row: " + seat.getRow() + " number: " + seat.getNumber());
+
                 return seatDTO;
             }).toList();
 
+            // ✅ حساب rows و cols
+            int rows = seatDTOs.stream()
+                    .mapToInt(s -> s.getRow() != null ? s.getRow() : 0)
+                    .max()
+                    .orElse(1);
+
+            int cols = seatDTOs.stream()
+                    .mapToInt(s -> s.getNumber() != null ? s.getNumber() : 0)
+                    .max()
+                    .orElse(1);
+
+            dto.setRows(rows);
+            dto.setCols(cols);
             dto.setSeats(seatDTOs);
+
             return dto;
         }).toList();
     }
-    
+
     public List<SectionDTO> getSectionsWithSeats() {
         List<Section> sections = sectionRepository.findAll();
 
