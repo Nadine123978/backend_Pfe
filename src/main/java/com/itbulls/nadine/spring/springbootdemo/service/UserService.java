@@ -42,7 +42,7 @@ public class UserService {
 
     public User createUser(User user) {
         // جلب المجموعة الافتراضية (ID = 2)
-        Group defaultGroup = groupRepository.findById(2L).orElse(null);
+        Group defaultGroup = groupRepository.findById(3L).orElse(null);
         if (defaultGroup == null) {
             throw new RuntimeException("Default group with ID 2 not found!");
         }

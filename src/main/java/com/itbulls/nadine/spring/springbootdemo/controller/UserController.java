@@ -57,8 +57,6 @@ public class UserController {
     }
 
  
-
-
     @PostMapping("/logout")
     public ResponseEntity<?> logoutUser(HttpServletRequest request) {
         HttpSession session = request.getSession(false);

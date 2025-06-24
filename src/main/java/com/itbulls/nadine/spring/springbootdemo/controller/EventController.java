@@ -169,15 +169,41 @@ public class EventController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}/publish")
     public ResponseEntity<?> publishEvent(@PathVariable Long id) {
-        return eventRepository.findById(id).map(event -> {
-            if (!"draft".equals(event.getStatus())) {
-                return ResponseEntity.badRequest().body("Only draft events can be published");
-            }
-            event.setStatus("active");
-            eventRepository.save(event);
-            return ResponseEntity.ok(event);
-        }).orElse(ResponseEntity.notFound().build());
+        Optional<Event> eventOpt = eventRepository.findById(id);
+        if (!eventOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Event event = eventOpt.get();
+
+        if (!"draft".equals(event.getStatus())) {
+            return ResponseEntity.badRequest().body("Only draft events can be published");
+        }
+
+        // تحقق من البيانات المطلوبة
+        if (event.getTitle() == null || event.getTitle().isEmpty()
+            || event.getStartDate() == null
+            || event.getEndDate() == null
+            || event.getStartDate().isAfter(event.getEndDate())
+            || event.getCategory() == null
+            || event.getLocation() == null
+            || event.getImageUrl() == null || event.getImageUrl().isEmpty()) {
+
+            return ResponseEntity.badRequest().body("Event is incomplete and cannot be published.");
+        }
+
+        event.setStatus("active");
+        eventRepository.save(event);
+        return ResponseEntity.ok(event);
     }
+    @GetMapping("/drafts/old")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<List<Event>> getOldDraftEvents() {
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        List<Event> oldDrafts = eventRepository.findByStatusAndCreatedAtBefore("draft", sevenDaysAgo);
+        return ResponseEntity.ok(oldDrafts);
+    }
+
 
     @GetMapping("/{eventId}/sections")
     public ResponseEntity<List<Section>> getSectionsByEventId(@PathVariable Long eventId) {

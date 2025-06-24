@@ -23,6 +23,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 	    List<Event> findByStatusInIgnoreCase(List<String> statuses);
 	   
 	   List<Event> findByEndDateBeforeAndStatusNot(LocalDateTime date, String status);
+	   List<Event> findByStatusAndCreatedAtBefore(String status, LocalDateTime dateTime);
 
 	   
 	   @Query("SELECT e FROM Event e WHERE e.id NOT IN (SELECT DISTINCT f.event.id FROM Folder f)")
