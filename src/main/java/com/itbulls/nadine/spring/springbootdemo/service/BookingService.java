@@ -111,16 +111,18 @@ public class BookingService {
         List<Seat> seats = booking.getSeats();
         if (seats != null) {
             for (Seat seat : seats) {
-                seat.setReserved(false);   // تحرير الحجز
-                seat.setLocked(false);     // فك القفل
-                seat.setLockedUntil(null); // إزالة وقت القفل
-                seat.setBooking(null);     // فك الربط مع الحجز
+                seat.setReserved(false);
+                seat.setLocked(false);
+                seat.setLockedUntil(null);
+                seat.setBooking(null);
                 seatRepository.save(seat);
             }
         }
 
-        bookingRepository.delete(booking);
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
     }
+
 
 
     public List<Booking> createBooking(Long userId, Long eventId, List<Long> seatIds) {

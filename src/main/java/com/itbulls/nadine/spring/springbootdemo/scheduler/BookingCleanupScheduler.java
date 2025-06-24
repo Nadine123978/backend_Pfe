@@ -24,7 +24,8 @@ public class BookingCleanupScheduler {
     @Autowired
     private SeatRepository seatRepository;
 
-    @Scheduled(fixedRate = 60 * 60 * 1000)  
+    @Scheduled(fixedRate = 86400000) // 86,400,000 ms = 24 hours
+
     @Transactional
     public void cleanupExpiredBookings() {
         LocalDateTime now = LocalDateTime.now();

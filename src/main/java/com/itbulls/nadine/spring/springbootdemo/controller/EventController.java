@@ -22,6 +22,7 @@ import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/events")
@@ -133,6 +134,51 @@ public class EventController {
         eventRepository.save(event);
         return ResponseEntity.ok(event);
     }
+    
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<Event>> getUpcomingEvents() {
+        List<Event> upcomingEvents = eventRepository.findByStatusIgnoreCase("upcoming");
+        return ResponseEntity.ok(upcomingEvents);
+    }
+
+    @GetMapping("/upcoming-with-booking")
+    public ResponseEntity<?> getUpcomingEventsWithBooking(@RequestParam Long userId) {
+        List<Event> upcomingEvents = eventService.getUpcomingEvents();
+        List<Booking> userBookings = bookingService.getBookingsForUser(userId);
+
+        List<EventWithBookingInfoDTO> result = upcomingEvents.stream().map(event -> {
+            // كل الحجوزات للمستخدم على هذا الحدث
+            List<Booking> bookingsForEvent = userBookings.stream()
+                .filter(b -> b.getEvent().getId().equals(event.getId()))
+                .collect(Collectors.toList());
+
+            // نبحث أولاً عن آخر حجز غير ملغي
+            Optional<Booking> lastActiveBookingOpt = bookingsForEvent.stream()
+                .filter(b -> !b.getStatus().name().equals("CANCELLED"))
+                .max(Comparator.comparing(Booking::getCreatedAt));
+
+            // إذا ما وجدنا حجز غير ملغي، نأخذ آخر حجز مهما كانت الحالة
+            Optional<Booking> lastBookingOpt = lastActiveBookingOpt.isPresent()
+                ? lastActiveBookingOpt
+                : bookingsForEvent.stream()
+                    .max(Comparator.comparing(Booking::getCreatedAt));
+
+            EventWithBookingInfoDTO dto = new EventWithBookingInfoDTO(event);
+
+            if (lastBookingOpt.isPresent()) {
+                Booking b = lastBookingOpt.get();
+                dto.setAlreadyBooked(true);
+                dto.setBookingStatus(b.getStatus().name());
+                dto.setBookingId(b.getId());
+            } else {
+                dto.setAlreadyBooked(false);
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}")
@@ -175,7 +221,6 @@ public class EventController {
         }
 
         Event event = eventOpt.get();
-
         if (!"draft".equals(event.getStatus())) {
             return ResponseEntity.badRequest().body("Only draft events can be published");
         }

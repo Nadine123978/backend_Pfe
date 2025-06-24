@@ -24,9 +24,11 @@ public class Event {
 
     private String status;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "location_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Location location;
+
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;

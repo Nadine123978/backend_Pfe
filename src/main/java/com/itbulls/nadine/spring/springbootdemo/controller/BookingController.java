@@ -125,7 +125,7 @@ public class BookingController {
         LocalDateTime now = LocalDateTime.now();
 
         // هنا صرنا نضيف 24 ساعة بدل 5 دقائق
-        LocalDateTime lockUntil = now.plusMinutes(1);
+        LocalDateTime lockUntil = now.plusMinutes(24);
   
 
         // تأكد أن الكراسي للحدث نفسه
@@ -291,7 +291,7 @@ public class BookingController {
             eventDTO.setStartDate(booking.getEvent().getStartDate());
             eventDTO.setEndDate(booking.getEvent().getEndDate());
             if (booking.getEvent().getLocation() != null) {
-                eventDTO.setLocation(booking.getEvent().getLocation().getFullAddress());
+                eventDTO.setLocation(booking.getEvent().getLocation().getVenueName());
             }
             dto.setEvent(eventDTO);
         }
@@ -484,7 +484,7 @@ public class BookingController {
 
             Location loc = booking.getEvent().getLocation();
             if (loc != null) {
-                eventDTO.setLocation(loc.getFullAddress());
+                eventDTO.setLocation(loc.getVenueName());
             }
 
             eventDTO.setImageUrl(booking.getEvent().getImageUrl());
@@ -521,6 +521,17 @@ public class BookingController {
 
         return ResponseEntity.ok(bookingDTOs);
     }
+    
+    @PutMapping("/cancel/{bookingId}")
+    public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId) {
+        try {
+            bookingService.cancelBooking(bookingId); // انت بدك تنفذ منطق الإلغاء هنا
+            return ResponseEntity.ok("Booking cancelled successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to cancel booking: " + e.getMessage());
+        }
+    }
+
     
     }
 

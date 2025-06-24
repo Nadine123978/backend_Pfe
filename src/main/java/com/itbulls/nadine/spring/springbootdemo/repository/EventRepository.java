@@ -18,12 +18,14 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 	  List<Event> findByTitleContainingIgnoreCase(String title); // 🔍 هاي اللي ناقصة
 	  List<Event> findByCategory_Id(Long categoryId);
 	  List<Event> findByCategoryId(Long categoryId);
+	  @Query("SELECT e FROM Event e WHERE e.status = 'upcoming' ORDER BY e.startDate ASC")
+	    List<Event> findUpcomingEvents();
 	  
 	   @Query("SELECT e FROM Event e WHERE LOWER(e.status) IN :statuses")
 	    List<Event> findByStatusInIgnoreCase(List<String> statuses);
 	   
 	   List<Event> findByEndDateBeforeAndStatusNot(LocalDateTime date, String status);
-	   List<Event> findByStatusAndCreatedAtBefore(String status, LocalDateTime dateTime);
+	   List<Event> findByStatusAndEndDateBefore(String status, LocalDateTime dateTime);
 
 	   
 	   @Query("SELECT e FROM Event e WHERE e.id NOT IN (SELECT DISTINCT f.event.id FROM Folder f)")
