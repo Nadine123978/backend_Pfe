@@ -6,10 +6,12 @@ import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.Location;
+import com.itbulls.nadine.spring.springbootdemo.model.Notification;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.repository.BookingRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
+import com.itbulls.nadine.spring.springbootdemo.repository.NotificationRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
@@ -59,6 +61,10 @@ public class BookingController {
 
     @Autowired
     private EmailService emailService;
+    
+    @Autowired
+    private NotificationRepository notificationRepository;
+
 
     @Autowired
     private UserService userService;
@@ -123,17 +129,12 @@ public class BookingController {
 
         List<Seat> seats = seatRepository.findAllById(bookingRequest.getSeatIds());
         LocalDateTime now = LocalDateTime.now();
-
-        // هنا صرنا نضيف 24 ساعة بدل 5 دقائق
         LocalDateTime lockUntil = now.plusMinutes(24);
-  
 
-        // تأكد أن الكراسي للحدث نفسه
         for (Seat seat : seats) {
             if (!seat.getSection().getEvent().getId().equals(event.getId())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid seat for this event");
             }
-
             if (seat.isReserved() || (seat.isLocked() && seat.getLockedUntil() != null && seat.getLockedUntil().isAfter(now))) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body("Seat " + seat.getCode() + " is already reserved or locked.");
@@ -147,8 +148,8 @@ public class BookingController {
         booking.setCreatedAt(LocalDateTime.now());
         booking.setNumberOfSeats(seats.size());
         booking.setBookingTime(now);
-        booking.setStatus(BookingStatus.PENDING); // مش confirmed بعد
-        booking.setExpiresAt(lockUntil); // مدة 24 ساعة
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setExpiresAt(lockUntil);
 
         double totalPrice = seats.stream().mapToDouble(Seat::getPrice).sum();
         booking.setPrice(totalPrice);
@@ -161,6 +162,15 @@ public class BookingController {
         }
 
         bookingRepository.save(booking);
+
+        // === هنا نضيف إشعار جديد للادمن ===
+        Notification notification = new Notification();
+        notification.setTitle("New Booking Created");
+        notification.setMessage("User " + user.getEmail() + " booked " + seats.size() + " seat(s) for event " + event.getTitle() + ".");
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setRead(false);
+
+        notificationRepository.save(notification);
 
         return ResponseEntity.ok(Map.of(
                 "bookingId", booking.getId(),

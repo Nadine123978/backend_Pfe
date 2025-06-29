@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.itbulls.nadine.spring.springbootdemo.dto.BookingEmailRequest;
+import com.itbulls.nadine.spring.springbootdemo.dto.ReplyRequest;
 import com.itbulls.nadine.spring.springbootdemo.dto.TicketInfo;
 import com.itbulls.nadine.spring.springbootdemo.model.Email;
 import com.itbulls.nadine.spring.springbootdemo.repository.EmailRepository;
@@ -46,5 +47,18 @@ public class EmailController {
             );
         }
         return ResponseEntity.ok().build();
+    }
+    @PostMapping("/send-reply")
+    public ResponseEntity<?> sendReplyEmail(@RequestBody ReplyRequest request) {
+        try {
+            emailService.sendEmail(
+                request.getToEmail(),
+                request.getSubject(),
+                request.getMessage()
+            );
+            return ResponseEntity.ok("Reply email sent successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to send email: " + e.getMessage());
+        }
     }
 }

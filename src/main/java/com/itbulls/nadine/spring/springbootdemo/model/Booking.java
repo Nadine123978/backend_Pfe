@@ -127,6 +127,17 @@ public class Booking {
         this.bookingTickets = bookingTickets;
     }
     
+    private String receiptPath; // صورة OMT
+    private String cardNumber;  // رقم Whish
+
+    // getters and setters
+    public String getReceiptPath() { return receiptPath; }
+    public void setReceiptPath(String receiptPath) { this.receiptPath = receiptPath; }
+
+    public String getCardNumber() { return cardNumber; }
+    public void setCardNumber(String cardNumber) { this.cardNumber = cardNumber; }
+
+    
 
     private int numberOfSeats;
     private LocalDateTime bookingTime;
