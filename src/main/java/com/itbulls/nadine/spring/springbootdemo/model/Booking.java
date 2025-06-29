@@ -42,7 +42,8 @@ public class Booking {
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookingTicket> bookingTickets;
-
+    
+   
     // Getters and Setters
 
     public Long getId() {

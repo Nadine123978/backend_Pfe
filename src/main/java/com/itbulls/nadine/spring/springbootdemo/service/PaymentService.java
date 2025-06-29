@@ -1,15 +1,20 @@
 package com.itbulls.nadine.spring.springbootdemo.service;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
-import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.model.Payment;
 import com.itbulls.nadine.spring.springbootdemo.repository.BookingRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PaymentService {
@@ -20,34 +25,46 @@ public class PaymentService {
     @Autowired
     private BookingRepository bookingRepository;
 
-    public Payment processPayment(Long bookingId, Double amount, String method) {
-        Optional<Booking> optionalBooking = bookingRepository.findById(bookingId);
+    public void handlePayment(String paymentMethod, String fullName, String phoneNumber,
+                              String receiptNumber, String orderNumber, Double amount,
+                              MultipartFile receiptImage) throws IOException {
 
-        if (optionalBooking.isEmpty()) {
-            throw new RuntimeException("Booking not found");
-        }
-
-        Booking booking = optionalBooking.get();
-
-        if (booking.getStatus() != BookingStatus.HELD) {
-
-            throw new RuntimeException("Cannot pay for booking that is not in HELD status");
-        }
+        Booking booking = bookingRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new RuntimeException("Booking not found for order number: " + orderNumber));
 
         Payment payment = new Payment();
         payment.setBooking(booking);
+        payment.setPaymentMethod(paymentMethod);
         payment.setAmount(amount);
-        payment.setMethod(method);
         payment.setPaidAt(LocalDateTime.now());
+        payment.setOrderNumber(orderNumber);
 
-        // Save the payment
-        Payment savedPayment = paymentRepository.save(payment);
+        if (isOffline(paymentMethod)) {
+            payment.setFullName(fullName);
+            payment.setPhoneNumber(phoneNumber);
+            payment.setReceiptNumber(receiptNumber);
+            payment.setStatus("PENDING");
 
-        // Update the booking status
-        booking.setStatus(BookingStatus.CONFIRMED);
+            if (receiptImage != null && !receiptImage.isEmpty()) {
+                String path = saveReceiptImage(receiptImage);
+                payment.setReceiptImagePath(path);
+            }
+        } else {
+            payment.setStatus("CONFIRMED");
+        }
 
-        bookingRepository.save(booking);
+        paymentRepository.save(payment);
+    }
 
-        return savedPayment;
+    private boolean isOffline(String method) {
+        return List.of("OMT", "CashUnited", "MyMonty", "Malik", "Libanpost").contains(method);
+    }
+
+    private String saveReceiptImage(MultipartFile image) throws IOException {
+        String filename = UUID.randomUUID() + "_" + image.getOriginalFilename();
+        Path path = Paths.get("uploads/receipts/" + filename);
+        Files.createDirectories(path.getParent());
+        Files.write(path, image.getBytes());
+        return path.toString();
     }
 }
