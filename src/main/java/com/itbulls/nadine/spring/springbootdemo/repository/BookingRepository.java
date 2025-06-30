@@ -36,6 +36,6 @@ boolean existsBySeatsContaining(Seat seat);
     long count();
     long countByStatus(BookingStatus status);
     List<Booking> findByUserIdAndEventId(Long userId, Long eventId);
-
+    Optional<Booking> findByOrderNumber(String orderNumber);
 
 }
