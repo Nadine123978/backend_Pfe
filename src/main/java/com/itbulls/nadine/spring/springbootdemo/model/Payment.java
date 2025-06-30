@@ -30,9 +30,6 @@ public class Payment {
 
     private String status;  // مثل PENDING, CONFIRMED
 
-    @Column(name = "order_number")
-    private String orderNumber;
-
     @ManyToOne
     @JoinColumn(name = "booking_id")
     private Booking booking;
@@ -103,14 +100,6 @@ public class Payment {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public String getOrderNumber() {
-        return orderNumber;
-    }
-
-    public void setOrderNumber(String orderNumber) {
-        this.orderNumber = orderNumber;
     }
 
     public Booking getBooking() {

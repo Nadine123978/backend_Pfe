@@ -26,35 +26,37 @@ public class PaymentService {
     private BookingRepository bookingRepository;
 
     public void handlePayment(String paymentMethod, String fullName, String phoneNumber,
-                              String receiptNumber, String orderNumber, Double amount,
-                              MultipartFile receiptImage) throws IOException {
+            String receiptNumber, Long bookingId, Double amount,
+            MultipartFile receiptImage) throws IOException {
 
-        Booking booking = bookingRepository.findByOrderNumber(orderNumber)
-                .orElseThrow(() -> new RuntimeException("Booking not found for order number: " + orderNumber));
+Booking booking = bookingRepository.findById(bookingId)
+.orElseThrow(() -> new RuntimeException("Booking not found for id: " + bookingId));
 
-        Payment payment = new Payment();
-        payment.setBooking(booking);
-        payment.setPaymentMethod(paymentMethod);
-        payment.setAmount(amount);
-        payment.setPaidAt(LocalDateTime.now());
-        payment.setOrderNumber(orderNumber);
+Payment payment = new Payment();
+payment.setBooking(booking);
+payment.setPaymentMethod(paymentMethod);
+payment.setAmount(amount);
+payment.setPaidAt(LocalDateTime.now());
 
-        if (isOffline(paymentMethod)) {
-            payment.setFullName(fullName);
-            payment.setPhoneNumber(phoneNumber);
-            payment.setReceiptNumber(receiptNumber);
-            payment.setStatus("PENDING");
+// يمكنك حذف هذا اذا لم يعد لديك orderNumber
+// payment.setOrderNumber(orderNumber);
 
-            if (receiptImage != null && !receiptImage.isEmpty()) {
-                String path = saveReceiptImage(receiptImage);
-                payment.setReceiptImagePath(path);
-            }
-        } else {
-            payment.setStatus("CONFIRMED");
-        }
+if (isOffline(paymentMethod)) {
+payment.setFullName(fullName);
+payment.setPhoneNumber(phoneNumber);
+payment.setReceiptNumber(receiptNumber);
+payment.setStatus("PAID");
 
-        paymentRepository.save(payment);
-    }
+if (receiptImage != null && !receiptImage.isEmpty()) {
+String path = saveReceiptImage(receiptImage);
+payment.setReceiptImagePath(path);
+}
+} else {
+payment.setStatus("CONFIRMED");
+}
+
+paymentRepository.save(payment);
+}
 
     private boolean isOffline(String method) {
         return List.of("OMT", "CashUnited", "MyMonty", "Malik", "Libanpost").contains(method);

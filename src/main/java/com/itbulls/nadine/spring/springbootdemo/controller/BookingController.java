@@ -206,8 +206,9 @@ public class BookingController {
             return ResponseEntity.status(403).body("Unauthorized to confirm this booking.");
         }
 
-        if (booking.getStatus() != BookingStatus.UNPAID) {
-            logger.warn("Booking with id {} is not in UNPAID status. Current status: {}", bookingId, booking.getStatus());
+        // السماح بتأكيد الدفع فقط إذا الحالة UNPAID أو PENDING
+        if (booking.getStatus() != BookingStatus.UNPAID && booking.getStatus() != BookingStatus.PENDING) {
+            logger.warn("Booking with id {} is not in UNPAID or PENDING status. Current status: {}", bookingId, booking.getStatus());
             return ResponseEntity.badRequest().body("Booking is not in a state to confirm payment.");
         }
 
@@ -218,6 +219,7 @@ public class BookingController {
         logger.info("Payment confirmed for booking id {}", bookingId);
         return ResponseEntity.ok("Payment confirmed. Booking is now PAID and waiting for admin confirmation.");
     }
+
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}/confirm")

@@ -42,6 +42,18 @@ public class EmailService {
         mailSender.send(message);
     }
 
+
+    public void sendPaymentConfirmationEmail(String toEmail, String userName, String orderNumber) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("Payment Confirmation - Thank You!");
+        message.setText("Dear " + userName + ",\n\n" +
+                        "Thank you for your payment. Your order number is: " + orderNumber + ".\n" +
+                        "We appreciate your trust.\n\n" +
+                        "Best regards,\n" +
+                        "Your Company Name");
+        mailSender.send(message);
+    }
     
     public void sendResetEmail(String email, String token) {
         // مثال بسيط
