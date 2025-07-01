@@ -15,12 +15,17 @@ public class EventStatusScheduler {
     @Autowired
     private EventRepository eventRepository;
 
-    @Scheduled(fixedRate = 6000) // كل دقيقة
+    @Scheduled(fixedRate = 60000) // كل دقيقة (أنصح 60000 بدل 6000 حتى ما يكون تحديث كثير متكرر)
     public void updateEventStatuses() {
         List<Event> events = eventRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
 
         for (Event event : events) {
+            if ("draft".equals(event.getStatus())) {
+                // لا تغير حالة المسودات
+                continue;
+            }
+
             if (event.getStartDate() != null && event.getEndDate() != null) {
                 String newStatus;
                 if (event.getStartDate().isAfter(now)) {
@@ -39,3 +44,4 @@ public class EventStatusScheduler {
         }
     }
 }
+

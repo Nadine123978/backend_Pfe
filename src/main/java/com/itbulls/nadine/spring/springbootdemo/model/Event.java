@@ -34,6 +34,7 @@ public class Event {
     private LocalDateTime endDate;
 
     private String imageUrl;
+    @Column(length = 1000)
     private String description;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.REMOVE, orphanRemoval = true)
@@ -43,32 +44,16 @@ public class Event {
     private List<Section> sections;
 
     @PrePersist
-    public void setStatus() {
-        if (startDate != null && endDate != null) {
-            if (startDate.isAfter(LocalDateTime.now())) {
-                this.status = "upcoming";
-            } else if (endDate.isBefore(LocalDateTime.now())) {
-                this.status = "past";
-            } else {
-                this.status = "active";
-            }
-        } else {
-            this.status = "draft";
+    public void prePersist() {
+        if (this.status == null || this.status.isEmpty()) {
+            this.status = "draft"; // بس إذا مش محدد، حط draft
         }
     }
 
     @PreUpdate
-    public void updateStatus() {
-        if (startDate != null && endDate != null) {
-            if (startDate.isAfter(LocalDateTime.now())) {
-                this.status = "upcoming";
-            } else if (endDate.isBefore(LocalDateTime.now())) {
-                this.status = "past";
-            } else {
-                this.status = "active";
-            }
-        } else {
-            this.status = "draft";
+    public void preUpdate() {
+        if (this.status == null || this.status.isEmpty()) {
+            this.status = "draft"; // بس إذا مش محدد
         }
     }
 

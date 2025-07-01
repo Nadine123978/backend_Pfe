@@ -60,7 +60,7 @@ public class EventController {
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PostMapping("/upload")
-    public ResponseEntity<Event> createEvent(
+    public ResponseEntity<?> createEvent(
         @RequestParam String title,
         @RequestParam String description,
         @RequestParam(required = false) String status,
@@ -68,72 +68,103 @@ public class EventController {
         @RequestParam Long locationId,
         @RequestParam(required = false) String startDate,
         @RequestParam(required = false) String endDate,
-        @RequestParam("file") MultipartFile file
-    ) throws IOException {
-
-        if (status == null || status.isEmpty()) {
-            status = "draft";
-        }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
-        LocalDateTime startDateTime = (startDate != null && !startDate.isEmpty()) ? LocalDateTime.parse(startDate, formatter) : null;
-        LocalDateTime endDateTime = (endDate != null && !endDate.isEmpty()) ? LocalDateTime.parse(endDate, formatter) : null;
-
-        Event event = new Event();
-        event.setTitle(title);
-        event.setDescription(description);
-        event.setStatus(status);
-        event.setStartDate(startDateTime);
-        event.setEndDate(endDateTime);
-
-        // Save image
-        Path uploadDir = Paths.get("uploads");
-        if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
-
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        Path filePath = uploadDir.resolve(fileName);
-        Files.write(filePath, file.getBytes());
-
-        event.setImageUrl("http://localhost:8081/uploads/" + fileName);
-
-        Category category = categoryRepository.findById(categoryId).orElse(null);
-        Location location = locationRepository.findById(locationId).orElse(null);
-
-        if (category == null || location == null) {
-            return ResponseEntity.badRequest().body(null);
-        }
-
-        event.setCategory(category);
-        event.setLocation(location);
-
-        return ResponseEntity.ok(eventRepository.save(event));
-    }
-
-    @PutMapping("/update-status/{id}")
-    public ResponseEntity<Event> updateStatus(@PathVariable Long id) {
-        Optional<Event> eventOpt = eventRepository.findById(id);
-        if (!eventOpt.isPresent()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Event event = eventOpt.get();
-
-        LocalDateTime now = LocalDateTime.now();
-        if (event.getStartDate() != null && event.getEndDate() != null) {
-            if (event.getStartDate().isAfter(now)) {
-                event.setStatus("upcoming");
-            } else if (event.getEndDate().isBefore(now)) {
-                event.setStatus("past");
-            } else {
-                event.setStatus("active");
+        @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        try {
+            // ضبط الحالة الافتراضية
+            if (status == null || status.isEmpty()) {
+                status = "draft";
             }
-        } else {
-            event.setStatus("draft");
-        }
 
-        eventRepository.save(event);
-        return ResponseEntity.ok(event);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+
+            LocalDateTime startDateTime = null;
+            LocalDateTime endDateTime = null;
+
+            // تحويل التواريخ مع التحقق من عدم فراغها
+            if (startDate != null && !startDate.isEmpty()) {
+                startDateTime = LocalDateTime.parse(startDate, formatter);
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                endDateTime = LocalDateTime.parse(endDate, formatter);
+            }
+
+            // تحقق من صحة التواريخ (اختياري)
+            if (startDateTime != null && endDateTime != null && startDateTime.isAfter(endDateTime)) {
+                return ResponseEntity.badRequest().body("Start date must be before end date.");
+            }
+
+            // جلب الكاتيجوري واللوكيشن
+            Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+            Optional<Location> locationOpt = locationRepository.findById(locationId);
+
+            if (!categoryOpt.isPresent() || !locationOpt.isPresent()) {
+                return ResponseEntity.badRequest().body("Category or Location not found");
+            }
+
+            Event event = new Event();
+            event.setTitle(title);
+            event.setDescription(description);
+            event.setStatus(status);
+            event.setStartDate(startDateTime);
+            event.setEndDate(endDateTime);
+            event.setCategory(categoryOpt.get());
+            event.setLocation(locationOpt.get());
+
+            // حفظ الصورة لو موجودة
+            if (file != null && !file.isEmpty()) {
+                Path uploadDir = Paths.get("uploads");
+                if (!Files.exists(uploadDir)) {
+                    Files.createDirectories(uploadDir);
+                }
+
+                String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+                Path filePath = uploadDir.resolve(fileName);
+                Files.write(filePath, file.getBytes());
+
+                event.setImageUrl("http://localhost:8081/uploads/" + fileName);
+            } else {
+                event.setImageUrl(null);
+            }
+
+            Event savedEvent = eventRepository.save(event);
+
+            return ResponseEntity.ok(savedEvent);
+
+        } catch (Exception e) {
+            e.printStackTrace(); // طباعه مفصّلة للأخطاء في اللوج
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error creating event: " + e.getMessage());
+        }
     }
+
+
+
+//  //  @PutMapping("/update-status/{id}")
+//   // public ResponseEntity<Event> updateStatus(@PathVariable Long id) {
+//       // Optional<Event> eventOpt = eventRepository.findById(id);
+//       /// if (!eventOpt.isPresent()) {
+//         //   return ResponseEntity.notFound().build();
+//      //  }
+//
+//       // Event event = eventOpt.get();
+//
+//       // LocalDateTime now = LocalDateTime.now();
+//       // if (event.getStartDate() != null && event.getEndDate() != null) {
+//            if (event.getStartDate().isAfter(now)) {
+//                event.setStatus("upcoming");
+//            } else if (event.getEndDate().isBefore(now)) {
+//                event.setStatus("past");
+//            } else {
+//                event.setStatus("active");
+//            }
+//        } else {
+//            event.setStatus("draft");
+//        }
+//
+//        eventRepository.save(event);
+//        return ResponseEntity.ok(event);
+//    }
     
     @GetMapping("/upcoming")
     public ResponseEntity<List<Event>> getUpcomingEvents() {
