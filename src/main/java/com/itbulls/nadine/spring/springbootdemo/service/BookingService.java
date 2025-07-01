@@ -1,5 +1,6 @@
 package com.itbulls.nadine.spring.springbootdemo.service;
 
+import com.itbulls.nadine.spring.springbootdemo.dto.BookingDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
@@ -79,7 +80,6 @@ public class BookingService {
 
         Booking booking = optionalBooking.get();
         booking.setConfirmed(true);
-        booking.setPaymentMethod(paymentMethod);
         booking.setStatus(BookingStatus.CONFIRMED);
 
         saveBooking(booking);
@@ -168,10 +168,64 @@ public class BookingService {
 
         return bookings;
     }
+    
+    public BookingDTO convertToDTO(Booking booking) {
+        BookingDTO dto = new BookingDTO();
+        dto.setId(booking.getId());
+        dto.setStatus(booking.getStatus());
+        dto.setCreatedAt(booking.getCreatedAt());
+        dto.setExpiresAt(booking.getExpiresAt());
+        dto.setPrice(booking.getPrice());
+        dto.setConfirmed(booking.getConfirmed());
+
+        // تحويل User إلى UserSummaryDTO
+        if (booking.getUser() != null) {
+            BookingDTO.UserSummaryDTO userDto = new BookingDTO.UserSummaryDTO();
+            userDto.setId(booking.getUser().getId());
+            userDto.setUsername(booking.getUser().getUsername());
+            userDto.setEmail(booking.getUser().getEmail());
+            dto.setUser(userDto);
+        }
+
+        // تحويل Event إلى EventSummaryDTO
+        if (booking.getEvent() != null) {
+            BookingDTO.EventSummaryDTO eventDto = new BookingDTO.EventSummaryDTO();
+            eventDto.setId(booking.getEvent().getId());
+            eventDto.setTitle(booking.getEvent().getTitle());
+            // لو الـ location في الـ Event موجود ككائن
+            eventDto.setLocation(booking.getEvent().getLocation() != null ? booking.getEvent().getLocation().getVenueName() : null);
+            eventDto.setImageUrl(booking.getEvent().getImageUrl());
+            eventDto.setStartDate(booking.getEvent().getStartDate());
+            eventDto.setEndDate(booking.getEvent().getEndDate());
+            dto.setEvent(eventDto);
+        }
+
+        // تحويل الـ Seats إلى قائمة SeatSummaryDTO
+        if (booking.getSeats() != null) {
+            List<BookingDTO.SeatSummaryDTO> seatDtos = booking.getSeats().stream().map(seat -> {
+                BookingDTO.SeatSummaryDTO seatDto = new BookingDTO.SeatSummaryDTO();
+                seatDto.setId(seat.getId());
+                seatDto.setCode(seat.getCode());
+                seatDto.setReserved(seat.isReserved());
+                seatDto.setColor(seat.getColor());
+                seatDto.setRow(seat.getRow());
+                seatDto.setNumber(seat.getNumber());
+                seatDto.setPrice(seat.getPrice());
+                return seatDto;
+            }).collect(Collectors.toList());
+            dto.setSeats(seatDtos);
+        }
+
+        return dto;
+    }
 
 
-    public List<Booking> getAllBookings() {
-        return bookingRepository.findAll();
+
+    public List<BookingDTO> getAllBookingDTOs() {
+        return bookingRepository.findAll()
+            .stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
     }
 
     public void deleteBooking(Long id) {
@@ -218,6 +272,9 @@ public class BookingService {
 
             emailService.sendBookingConfirmation(email, subject, body);
         }
+    }
+    public Optional<Booking> getBookingByIdWithUser(Long id) {
+        return bookingRepository.findByIdWithUser(id);
     }
 
   

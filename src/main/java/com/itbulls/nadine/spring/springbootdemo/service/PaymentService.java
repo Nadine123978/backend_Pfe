@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.service;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
+import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.model.Payment;
 import com.itbulls.nadine.spring.springbootdemo.repository.BookingRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.PaymentRepository;
@@ -29,34 +30,37 @@ public class PaymentService {
             String receiptNumber, Long bookingId, Double amount,
             MultipartFile receiptImage) throws IOException {
 
-Booking booking = bookingRepository.findById(bookingId)
-.orElseThrow(() -> new RuntimeException("Booking not found for id: " + bookingId));
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found for id: " + bookingId));
 
-Payment payment = new Payment();
-payment.setBooking(booking);
-payment.setPaymentMethod(paymentMethod);
-payment.setAmount(amount);
-payment.setPaidAt(LocalDateTime.now());
+        Payment payment = new Payment();
+        payment.setBooking(booking);
+        payment.setPaymentMethod(paymentMethod);
+        payment.setAmount(amount);
+        payment.setPaidAt(LocalDateTime.now());
 
-// يمكنك حذف هذا اذا لم يعد لديك orderNumber
-// payment.setOrderNumber(orderNumber);
+        if (isOffline(paymentMethod)) {
+            payment.setFullName(fullName);
+            payment.setPhoneNumber(phoneNumber);
+            payment.setReceiptNumber(receiptNumber);
+            payment.setStatus("PAID");
 
-if (isOffline(paymentMethod)) {
-payment.setFullName(fullName);
-payment.setPhoneNumber(phoneNumber);
-payment.setReceiptNumber(receiptNumber);
-payment.setStatus("PAID");
+            if (receiptImage != null && !receiptImage.isEmpty()) {
+                String path = saveReceiptImage(receiptImage);
+                payment.setReceiptImagePath(path);
+            }
 
-if (receiptImage != null && !receiptImage.isEmpty()) {
-String path = saveReceiptImage(receiptImage);
-payment.setReceiptImagePath(path);
-}
-} else {
-payment.setStatus("CONFIRMED");
-}
+            booking.setStatus(BookingStatus.PAID);
+            bookingRepository.save(booking);
 
-paymentRepository.save(payment);
-}
+        } else {
+            payment.setStatus("CONFIRMED");
+            booking.setStatus(BookingStatus.PAID); // أو BookingStatus.CONFIRMED حسب النظام
+            bookingRepository.save(booking);
+        }
+
+        paymentRepository.save(payment);
+    }
 
     private boolean isOffline(String method) {
         return List.of("OMT", "CashUnited", "MyMonty", "Malik", "Libanpost").contains(method);

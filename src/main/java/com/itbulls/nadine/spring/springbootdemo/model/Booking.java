@@ -25,8 +25,7 @@ public class Booking {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "payment_method")
-    private String paymentMethod;
+    
 
     private Boolean confirmed = false;
 
@@ -78,13 +77,6 @@ public class Booking {
         this.user = user;
     }
 
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
 
     public Boolean getConfirmed() {
         return confirmed;
@@ -127,17 +119,7 @@ public class Booking {
         this.bookingTickets = bookingTickets;
     }
     
-    private String receiptPath; // صورة OMT
-    private String cardNumber;  // رقم Whish
-
-    // getters and setters
-    public String getReceiptPath() { return receiptPath; }
-    public void setReceiptPath(String receiptPath) { this.receiptPath = receiptPath; }
-
-    public String getCardNumber() { return cardNumber; }
-    public void setCardNumber(String cardNumber) { this.cardNumber = cardNumber; }
-
-    
+   
 
     private int numberOfSeats;
     private LocalDateTime bookingTime;

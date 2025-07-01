@@ -20,8 +20,10 @@ import com.itbulls.nadine.spring.springbootdemo.service.JwtService;
 import com.itbulls.nadine.spring.springbootdemo.service.TicketGeneratorService;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
 
-
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.PageRequest;
@@ -179,7 +181,7 @@ public class BookingController {
     }
 
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PostMapping("/confirm-payment")
     public ResponseEntity<?> confirmPayment(@RequestParam Long bookingId, @RequestParam String paymentMethod) {
         logger.info("Received confirmPayment request with bookingId={} and paymentMethod={}", bookingId, paymentMethod);
@@ -212,14 +214,12 @@ public class BookingController {
             return ResponseEntity.badRequest().body("Booking is not in a state to confirm payment.");
         }
 
-        booking.setPaymentMethod(paymentMethod);
         booking.setStatus(BookingStatus.PAID);
         bookingService.saveBooking(booking);
 
         logger.info("Payment confirmed for booking id {}", bookingId);
         return ResponseEntity.ok("Payment confirmed. Booking is now PAID and waiting for admin confirmation.");
     }
-
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}/confirm")
@@ -239,6 +239,7 @@ public class BookingController {
         booking.setConfirmed(true);
         bookingService.saveBooking(booking);
 
+        // توليد التذكرة وإرسالها بالبريد
         byte[] pdf = ticketGeneratorService.generateTicket(booking);
         emailService.sendBookingConfirmationWithPDF(
                 booking.getUser().getEmail(),
@@ -247,9 +248,10 @@ public class BookingController {
                 pdf
         );
 
-        return ResponseEntity.ok("Booking confirmed by admin and ticket sent.");
+        // أرجع الحجز بعد التحديث لكي يتم عرضه في الواجهة مباشرة
+        return ResponseEntity.ok(booking);
     }
-    
+
     @GetMapping("/check")
     public ResponseEntity<?> checkIfBookingExists(@RequestParam Long eventId) {
         try {
@@ -293,7 +295,6 @@ public class BookingController {
         dto.setExpiresAt(booking.getExpiresAt());
         dto.setPrice(booking.getPrice());
         dto.setConfirmed(booking.getConfirmed());
-        dto.setPaymentMethod(booking.getPaymentMethod());
 
         if (booking.getEvent() != null) {
             BookingDTO.EventSummaryDTO eventDTO = new BookingDTO.EventSummaryDTO();
@@ -340,12 +341,12 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getBookingsForUser(userId));
     }
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @GetMapping
-    public ResponseEntity<?> getAllBookings() {
-        return ResponseEntity.ok(bookingService.getAllBookings());
+    public ResponseEntity<List<BookingDTO>> getAllBookings() {
+        List<BookingDTO> bookings = bookingService.getAllBookingDTOs();
+        return ResponseEntity.ok(bookings);
     }
-
+    
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
@@ -381,36 +382,32 @@ public class BookingController {
         return ResponseEntity.ok("Booking status updated successfully to " + newStatus.name());
     }
 
-//    @PostMapping("/confirm")
-//    public ResponseEntity<?> confirmBooking(
-//            @RequestBody BookingRequest bookingRequest,
-//            @RequestHeader("Authorization") String token) {
-//        try {
-//            String email = jwtService.extractUsername(token.substring(7));
-//            User user = userRepository.findByEmail(email);
-//            if (user == null) {
-//                throw new RuntimeException("User not found");
-//            }
-//
-//            List<Booking> bookings = bookingService.createBooking(
-//                    user.getId(), bookingRequest.getEventId(), bookingRequest.getSeatIds());
-//
-//            if (bookingRequest.isPayNow()) {
-//                // نفّذ عملية الدفع (مثلاً استدعاء خدمة دفع)
-//                // لو الدفع ناجح، حدث حالة الحجز لـ CONFIRMED
-//                bookingService.confirmPayment(bookings);
-//            } else {
-//                // حالة الحجز تبقى PENDING (لم يتم الدفع)
-//            }
-//
-//            return ResponseEntity.ok(bookings);
-//        } catch (RuntimeException ex) {
-//            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
-//        } catch (Exception ex) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Something went wrong");
-//        }
-//    }
-//    
+    @PostMapping("/confirm")
+    public ResponseEntity<?> confirmBooking(
+            @RequestBody BookingRequest bookingRequest,
+            @RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtService.extractUsername(token.substring(7));
+            User user = userRepository.findByEmail(email);
+            if (user == null) {
+                throw new RuntimeException("User not found");
+            }
+
+            List<Booking> bookings = bookingService.createBooking(
+                    user.getId(), bookingRequest.getEventId(), bookingRequest.getSeatIds());
+
+            if (bookingRequest.isPayNow()) {
+                bookingService.confirmPayment(bookings);
+            }
+
+            return ResponseEntity.ok(bookings);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Something went wrong");
+        }
+    }
+
     @PostMapping("/pay/{bookingId}")
     public ResponseEntity<?> payBooking(
             @PathVariable Long bookingId,
@@ -440,11 +437,9 @@ public class BookingController {
     public ResponseEntity<BookingDTO> getBooking(@PathVariable Long id) {
         System.out.println("Trying to fetch booking with ID: " + id);
 
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> {
-                    System.out.println("Booking not found for ID: " + id);
-                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found");
-                });
+        Booking booking = bookingRepository.findByIdWithUser(id)
+        	    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+
 
         System.out.println("Booking found: " + booking);
 
@@ -464,7 +459,6 @@ public class BookingController {
         dto.setExpiresAt(booking.getExpiresAt());
         dto.setPrice(booking.getPrice());
         dto.setConfirmed(booking.getConfirmed());
-        dto.setPaymentMethod(booking.getPaymentMethod());
       
 
 
@@ -508,6 +502,18 @@ public class BookingController {
         } else {
             System.out.println("Booking has no event assigned.");
         }
+        
+        if (booking.getUser() != null) {
+            BookingDTO.UserSummaryDTO userDTO = new BookingDTO.UserSummaryDTO();
+            userDTO.setId(booking.getUser().getId());
+            userDTO.setUsername(booking.getUser().getUsername());
+            userDTO.setEmail(booking.getUser().getEmail());
+            dto.setUser(userDTO);
+            System.out.println("User info set: " + userDTO);
+        } else {
+            System.out.println("Booking has no user assigned.");
+        }
+
 
         return dto;
     }
@@ -543,9 +549,32 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to cancel booking: " + e.getMessage());
         }
     }
+    
+    @GetMapping("/{id}/ticket")
+    public ResponseEntity<byte[]> downloadTicket(@PathVariable Long id) {
+        Optional<Booking> optBooking = bookingService.getBookingById(id);
+        if (optBooking.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Booking booking = optBooking.get();
+
+        byte[] pdf = ticketGeneratorService.generateTicket(booking);
+        if (pdf == null || pdf.length == 0) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+            .filename("ticket_" + id + ".pdf")
+            .build());
+
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
+    }
+}
 
     
-    }
-
+    
 
    

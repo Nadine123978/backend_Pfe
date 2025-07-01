@@ -31,11 +31,10 @@ public class TicketGeneratorService {
             doc.add(new Paragraph("🎟️ Ticket Confirmation"));
             doc.add(new Paragraph("Booking ID: " + booking.getId()));
             doc.add(new Paragraph("Event: " + booking.getEvent().getTitle()));
-            doc.add(new Paragraph("Seat: " + (booking.getSeat() != null ? booking.getSeat().getCode() : "N/A")));
+            doc.add(new Paragraph("Seat: " + (booking.getSeats() != null ? booking.getSeats(): "N/A")));
             doc.add(new Paragraph("Price: " + booking.getPrice() + " $"));
             doc.add(new Paragraph("Status: " + booking.getStatus()));
             doc.add(new Paragraph("Confirmed: " + booking.getConfirmed()));
-            doc.add(new Paragraph("Payment Method: " + booking.getPaymentMethod()));
             doc.add(new Paragraph("Date: " + booking.getCreatedAt()));
 
             doc.close();

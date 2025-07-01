@@ -36,4 +36,9 @@ boolean existsBySeatsContaining(Seat seat);
     long count();
     long countByStatus(BookingStatus status);
     List<Booking> findByUserIdAndEventId(Long userId, Long eventId);
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.user LEFT JOIN FETCH b.event LEFT JOIN FETCH b.seats")
+    List<Booking> findAllWithDetails();
+    @Query("SELECT b FROM Booking b JOIN FETCH b.user WHERE b.id = :id")
+    Optional<Booking> findByIdWithUser(@Param("id") Long id);
+
 }
