@@ -16,6 +16,10 @@ public class Event {
     private Long id;
 
     private String title;
+    
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EventImage> images;
+
 
     @ManyToOne
     @JoinColumn(name = "category_id")
