@@ -34,4 +34,16 @@ public class LocationController {
     public ResponseEntity<?> getAllLocations() {
         return ResponseEntity.ok(locationRepository.findAll());
     }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteLocation(@PathVariable Long id) {
+        if (!locationRepository.existsById(id)) {
+            return ResponseEntity.status(404).body("Location not found");
+        }
+        locationRepository.deleteById(id);
+        return ResponseEntity.ok("Location deleted successfully");
+    }
+
+
+
 }
