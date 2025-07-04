@@ -21,10 +21,10 @@ public class Event {
     private List<EventImage> images;
 
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    @JsonBackReference
+    @ManyToOne(fetch = FetchType.LAZY) // أو EAGER إذا بدك دايمًا
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Category category;
+
 
     private String status;
     
