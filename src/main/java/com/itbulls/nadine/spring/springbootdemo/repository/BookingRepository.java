@@ -2,6 +2,7 @@ package com.itbulls.nadine.spring.springbootdemo.repository;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Booking;
 import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
+import com.itbulls.nadine.spring.springbootdemo.model.Payment;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 
 import jakarta.transaction.Transactional;
@@ -40,5 +41,7 @@ boolean existsBySeatsContaining(Seat seat);
     List<Booking> findAllWithDetails();
     @Query("SELECT b FROM Booking b JOIN FETCH b.user WHERE b.id = :id")
     Optional<Booking> findByIdWithUser(@Param("id") Long id);
+    
+
 
 }

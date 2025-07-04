@@ -18,6 +18,17 @@ public class BookingDTO {
     private Double price;
     private Boolean confirmed;
     private String paymentMethod;
+    
+    private String receiptImageUrl;
+
+    public String getReceiptImageUrl() {
+        return receiptImageUrl;
+    }
+
+    public void setReceiptImageUrl(String receiptImageUrl) {
+        this.receiptImageUrl = receiptImageUrl;
+    }
+
 
     private EventSummaryDTO event;
     private List<SeatSummaryDTO> seats;

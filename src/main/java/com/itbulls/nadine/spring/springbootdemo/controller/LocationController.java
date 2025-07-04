@@ -1,8 +1,10 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.itbulls.nadine.spring.springbootdemo.model.Location;
 import com.itbulls.nadine.spring.springbootdemo.repository.LocationRepository;
@@ -43,6 +45,18 @@ public class LocationController {
         locationRepository.deleteById(id);
         return ResponseEntity.ok("Location deleted successfully");
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<Location> updateLocation(@PathVariable Long id, @RequestBody Location updatedLocation) {
+        return locationRepository.findById(id).map(location -> {
+            location.setVenueName(updatedLocation.getVenueName());
+            location.setLatitude(updatedLocation.getLatitude());
+            location.setLongitude(updatedLocation.getLongitude());
+            Location saved = locationRepository.save(location);
+            return ResponseEntity.ok(saved);
+        }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Location not found"));
+    }
+
+
 
 
 

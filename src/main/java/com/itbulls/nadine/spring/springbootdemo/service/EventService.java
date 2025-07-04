@@ -89,5 +89,9 @@ public class EventService {
 
         return dtoList;
     }
+    public List<Event> getUpcomingPublishedEvents() {
+        return eventRepository.findUpcomingPublishedEvents();
+    }
+
 
 }

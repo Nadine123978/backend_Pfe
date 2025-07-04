@@ -7,11 +7,17 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
+
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-	@Query("SELECT c FROM Category c LEFT JOIN c.events e GROUP BY c.id ORDER BY COUNT(e.id) DESC")
-	List<Category> findTrendingCategories(Pageable pageable);
-	// نسخة بدون Pageable (لـ كل التصنيفات الرائجة)
-	@Query("SELECT c FROM Category c WHERE c.isTrending = true")
-	List<Category> findTrendingCategories();
+
+    @Query("SELECT c FROM Category c LEFT JOIN c.events e GROUP BY c.id ORDER BY COUNT(e.id) DESC")
+    List<Category> findTrendingCategories(Pageable pageable);
+
+    // ✅ لجلب كل التصنيفات الرائجة (is_trending = true)
+    List<Category> findByIsTrendingTrue();
+
+    // ✅ لجلب عدد محدود منها
+    List<Category> findByIsTrendingTrue(Pageable pageable);
+
     long count();
 }

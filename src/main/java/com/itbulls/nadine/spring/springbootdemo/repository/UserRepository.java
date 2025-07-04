@@ -11,6 +11,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     User findByUsername(String username); 
 
     List<User> findByGroupId(int groupId);
+    List<User> findByGroupId(Long groupId);
+
 
     long count();// 👈 ضروري لتسجيل الدخول
 

@@ -174,7 +174,7 @@ public class EventController {
 
     @GetMapping("/upcoming-with-booking")
     public ResponseEntity<?> getUpcomingEventsWithBooking(@RequestParam Long userId) {
-        List<Event> upcomingEvents = eventService.getUpcomingEvents();
+        List<Event> upcomingEvents = eventService.getUpcomingPublishedEvents();
         List<Booking> userBookings = bookingService.getBookingsForUser(userId);
 
         List<EventWithBookingInfoDTO> result = upcomingEvents.stream().map(event -> {
@@ -268,10 +268,23 @@ public class EventController {
             return ResponseEntity.badRequest().body("Event is incomplete and cannot be published.");
         }
 
-        event.setStatus("active");
+        // ✅ تحديد status حسب التاريخ الحالي
+        LocalDateTime now = LocalDateTime.now();
+        if (event.getStartDate().isAfter(now)) {
+            event.setStatus("upcoming");
+        } else if (!event.getEndDate().isBefore(now)) {
+            event.setStatus("active");
+        } else {
+            event.setStatus("past");
+        }
+
+        // ✅ جعل isPublished true
+        event.setPublished(true);
+
         eventRepository.save(event);
         return ResponseEntity.ok(event);
     }
+
     @GetMapping("/drafts/old")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<List<Event>> getOldDraftEvents() {

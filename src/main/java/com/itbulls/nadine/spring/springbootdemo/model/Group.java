@@ -1,6 +1,7 @@
 package com.itbulls.nadine.spring.springbootdemo.model;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import java.util.List;
@@ -17,6 +18,7 @@ public class Group {
     private String name;
 
     @OneToMany(mappedBy = "group")
+    @JsonIgnore
     private List<User> users;
 
     public Group() {}

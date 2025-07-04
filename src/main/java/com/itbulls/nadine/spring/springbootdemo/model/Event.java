@@ -27,6 +27,9 @@ public class Event {
     private Category category;
 
     private String status;
+    
+
+
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "location_id", nullable = false)
@@ -79,6 +82,18 @@ public class Event {
     public void setTitle(String title) {
         this.title = title;
     }
+    
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
+    private boolean published;
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
+    }
+
 
     public Category getCategory() {
         return category;

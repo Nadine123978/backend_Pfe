@@ -7,11 +7,13 @@ import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
 import com.itbulls.nadine.spring.springbootdemo.model.Location;
 import com.itbulls.nadine.spring.springbootdemo.model.Notification;
+import com.itbulls.nadine.spring.springbootdemo.model.Payment;
 import com.itbulls.nadine.spring.springbootdemo.model.Seat;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.repository.BookingRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.EventRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.NotificationRepository;
+import com.itbulls.nadine.spring.springbootdemo.repository.PaymentRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
@@ -83,6 +85,8 @@ public class BookingController {
 
     @Autowired
     private BookingRepository bookingRepository;
+    @Autowired
+    private PaymentRepository paymentRepository;
 
 
 
@@ -235,18 +239,22 @@ public class BookingController {
             return ResponseEntity.badRequest().body("Booking must be PAID before confirmation.");
         }
 
+     // Confirm booking by admin
         booking.setStatus(BookingStatus.CONFIRMED);
         booking.setConfirmed(true);
         bookingService.saveBooking(booking);
 
-        // توليد التذكرة وإرسالها بالبريد
+        // Generate ticket PDF
         byte[] pdf = ticketGeneratorService.generateTicket(booking);
+
+        // Send confirmation email with attached ticket
         emailService.sendBookingConfirmationWithPDF(
-                booking.getUser().getEmail(),
-                "تم تأكيد الحجز",
-                "تم تأكيد حجزك بنجاح، تجد التذكرة مرفقة.",
-                pdf
+            booking.getUser().getEmail(),
+            "Booking Confirmed",
+            "Your booking has been successfully confirmed. Please find the attached ticket.",
+            pdf
         );
+
 
         // أرجع الحجز بعد التحديث لكي يتم عرضه في الواجهة مباشرة
         return ResponseEntity.ok(booking);
@@ -459,17 +467,15 @@ public class BookingController {
         dto.setExpiresAt(booking.getExpiresAt());
         dto.setPrice(booking.getPrice());
         dto.setConfirmed(booking.getConfirmed());
-      
 
-
-        // Seat info
+        // Seats info
         if (booking.getSeats() != null && !booking.getSeats().isEmpty()) {
             List<BookingDTO.SeatSummaryDTO> seatDTOs = booking.getSeats().stream().map(seat -> {
                 BookingDTO.SeatSummaryDTO dtoSeat = new BookingDTO.SeatSummaryDTO();
                 dtoSeat.setId(seat.getId());
                 dtoSeat.setCode(seat.getCode());
                 dtoSeat.setReserved(seat.isReserved());
-                dtoSeat.setColor(seat.getColor()); // إذا عندك color
+                dtoSeat.setColor(seat.getColor());
                 dtoSeat.setRow(seat.getRow());
                 dtoSeat.setPrice(seat.getPrice());
                 dtoSeat.setNumber(seat.getNumber());
@@ -502,7 +508,8 @@ public class BookingController {
         } else {
             System.out.println("Booking has no event assigned.");
         }
-        
+
+        // User info
         if (booking.getUser() != null) {
             BookingDTO.UserSummaryDTO userDTO = new BookingDTO.UserSummaryDTO();
             userDTO.setId(booking.getUser().getId());
@@ -514,10 +521,20 @@ public class BookingController {
             System.out.println("Booking has no user assigned.");
         }
 
+     // Payment receipt image
+        Payment payment = paymentRepository.findByBookingId(booking.getId());
+        if (payment != null) {
+            dto.setPaymentMethod(payment.getPaymentMethod());
+            if (payment.getReceiptImagePath() != null) {
+                String rawPath = payment.getReceiptImagePath();
+                String webPath = rawPath.replace("\\", "/");
+                dto.setReceiptImageUrl("/" + webPath);
+            }
+        }
 
         return dto;
     }
-    
+
     @GetMapping("/mybookings")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> getMyBookings() {
@@ -543,12 +560,22 @@ public class BookingController {
     @PutMapping("/cancel/{bookingId}")
     public ResponseEntity<?> cancelBooking(@PathVariable Long bookingId) {
         try {
-            bookingService.cancelBooking(bookingId); // انت بدك تنفذ منطق الإلغاء هنا
-            return ResponseEntity.ok("Booking cancelled successfully");
+            Booking cancelledBooking = bookingService.cancelBooking(bookingId); // يفترض يعيد الـ booking بعد الإلغاء
+
+            // إرسال إيميل إشعار إلغاء
+            emailService.sendEmail(
+            	    cancelledBooking.getUser().getEmail(),
+            	    "Booking Cancelled",
+            	    "Dear user, your booking with ID " + bookingId + " has been cancelled. If you have any questions, please contact us."
+            	);
+
+
+            return ResponseEntity.ok(cancelledBooking);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to cancel booking: " + e.getMessage());
         }
     }
+
     
     @GetMapping("/{id}/ticket")
     public ResponseEntity<byte[]> downloadTicket(@PathVariable Long id) {

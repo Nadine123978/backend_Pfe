@@ -62,10 +62,9 @@ public class CategoryController {
 
         if (limit != null && limit > 0) {
             Pageable pageable = PageRequest.of(0, limit);
-            trending = categoryRepository.findTrendingCategories(pageable);
+            trending = categoryRepository.findByIsTrendingTrue(pageable);
         } else {
-            // إذا ما في limit رجّع الكل
-            trending = categoryRepository.findTrendingCategories(); 
+            trending = categoryRepository.findByIsTrendingTrue();
         }
 
         List<CategoryDTO> result = trending.stream()

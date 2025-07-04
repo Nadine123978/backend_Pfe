@@ -26,8 +26,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 	   
 	   List<Event> findByEndDateBeforeAndStatusNot(LocalDateTime date, String status);
 	   List<Event> findByStatusAndEndDateBefore(String status, LocalDateTime dateTime);
-
 	   
+	   @Query("SELECT e FROM Event e WHERE e.status = 'upcoming' AND e.published = true")
+	   List<Event> findUpcomingPublishedEvents();
+
 	   @Query("SELECT e FROM Event e WHERE e.id NOT IN (SELECT DISTINCT f.event.id FROM Folder f)")
 	   List<Event> findEventsWithoutFolders();
 	   long count();

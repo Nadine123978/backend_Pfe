@@ -103,8 +103,7 @@ public class BookingService {
     public List<Booking> getExpiredHeldBookings(LocalDateTime now) {
         return bookingRepository.findByStatusAndExpiresAtBefore(BookingStatus.HELD, now);
     }
-
-    public void cancelBooking(Long bookingId) {
+    public Booking cancelBooking(Long bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
@@ -120,9 +119,11 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
-    }
+        Booking cancelledBooking = bookingRepository.save(booking);
 
+        // هنا ترجع الـ booking بعد الحفظ عشان ترسل الإيميل من Controller
+        return cancelledBooking;
+    }
 
 
     public List<Booking> createBooking(Long userId, Long eventId, List<Long> seatIds) {
@@ -276,6 +277,6 @@ public class BookingService {
     public Optional<Booking> getBookingByIdWithUser(Long id) {
         return bookingRepository.findByIdWithUser(id);
     }
-
+ 
   
 }

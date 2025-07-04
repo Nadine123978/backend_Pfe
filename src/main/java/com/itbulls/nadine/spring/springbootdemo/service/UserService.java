@@ -41,20 +41,14 @@ public class UserService {
 // ✅ ضروري لتشفير الباسورد
 
     public User createUser(User user) {
-        // جلب المجموعة الافتراضية (ID = 2)
-        Group defaultGroup = groupRepository.findById(3L).orElse(null);
-        if (defaultGroup == null) {
-            throw new RuntimeException("Default group with ID 2 not found!");
-        }
+        Group group = groupRepository.findById(3L)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
 
-        // ربط المستخدم بالمجموعة
-        user.setGroup(defaultGroup);
+        user.setGroup(group);
 
-        // 🔐 تشفير كلمة المرور قبل الحفظ
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
 
-        // حفظ المستخدم في قاعدة البيانات
         return userRepository.save(user);
     }
 

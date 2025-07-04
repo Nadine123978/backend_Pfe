@@ -3,6 +3,7 @@ package com.itbulls.nadine.spring.springbootdemo.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import com.itbulls.nadine.spring.springbootdemo.dto.UserDto;
 import com.itbulls.nadine.spring.springbootdemo.model.User;
 import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
@@ -68,12 +69,24 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
     
-    @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return ResponseEntity.ok(users);
+    @GetMapping("/group/{groupId}")
+    public ResponseEntity<List<UserDto>> getUsersByGroup(@PathVariable Long groupId) {
+        List<User> users = userRepository.findByGroupId(groupId);
+        List<UserDto> dtos = users.stream()
+                                 .map(UserDto::convertToDto)
+                                 .toList();
+        return ResponseEntity.ok(dtos);
     }
 
+
+    @GetMapping
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        List<UserDto> dtos = users.stream()
+                                  .map(UserDto::convertToDto)
+                                  .toList();
+        return ResponseEntity.ok(dtos);
+    }
 
 
 }
