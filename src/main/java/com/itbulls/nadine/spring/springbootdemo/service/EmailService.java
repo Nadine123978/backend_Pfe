@@ -6,6 +6,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.itbulls.nadine.spring.springbootdemo.model.Event;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.core.io.ByteArrayResource;
@@ -94,6 +96,12 @@ public class EmailService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    public void sendCancellationEmail(String toEmail, Event event) {
+        // هنا حط كود الإرسال الحقيقي أو مجرد طباعه للتمثيل
+        System.out.println("Sending cancellation email to " + toEmail + " about event " + event.getTitle());
+        // إذا تستخدم JavaMailSender مثلاً، تضيف الكود هنا
     }
    
 

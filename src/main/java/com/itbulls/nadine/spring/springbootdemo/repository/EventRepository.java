@@ -6,31 +6,35 @@ import org.springframework.data.jpa.repository.Query;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
-
-
+import com.itbulls.nadine.spring.springbootdemo.model.EventStatus;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
     
-    // Add this method
-	List<Event> findByStatusIgnoreCase(String status);
-	  long countByStatus(String status);
-	  
-	  List<Event> findByTitleContainingIgnoreCase(String title); // 🔍 هاي اللي ناقصة
-	  List<Event> findByCategory_Id(Long categoryId);
-	  List<Event> findByCategoryId(Long categoryId);
-	  @Query("SELECT e FROM Event e WHERE e.status = 'upcoming' ORDER BY e.startDate ASC")
-	    List<Event> findUpcomingEvents();
-	  
-	   @Query("SELECT e FROM Event e WHERE LOWER(e.status) IN :statuses")
-	    List<Event> findByStatusInIgnoreCase(List<String> statuses);
-	   
-	   List<Event> findByEndDateBeforeAndStatusNot(LocalDateTime date, String status);
-	   List<Event> findByStatusAndEndDateBefore(String status, LocalDateTime dateTime);
-	   
-	   @Query("SELECT e FROM Event e WHERE e.status = 'upcoming' AND e.published = true")
-	   List<Event> findUpcomingPublishedEvents();
+    // البحث حسب حالة الحدث (enum)
+    List<Event> findByStatus(EventStatus status);
 
-	   @Query("SELECT e FROM Event e WHERE e.id NOT IN (SELECT DISTINCT f.event.id FROM Folder f)")
-	   List<Event> findEventsWithoutFolders();
-	   long count();
+    long countByStatus(EventStatus status);
+
+    List<Event> findByTitleContainingIgnoreCase(String title);
+
+    List<Event> findByCategory_Id(Long categoryId);
+
+    List<Event> findByCategoryId(Long categoryId);
+
+    @Query("SELECT e FROM Event e WHERE e.status = com.itbulls.nadine.spring.springbootdemo.model.EventStatus.UPCOMING ORDER BY e.startDate ASC")
+    List<Event> findUpcomingEvents();
+
+    List<Event> findByStatusIn(List<EventStatus> statuses);
+
+    List<Event> findByEndDateBeforeAndStatusNot(LocalDateTime date, EventStatus status);
+
+    List<Event> findByStatusAndEndDateBefore(EventStatus status, LocalDateTime dateTime);
+
+    @Query("SELECT e FROM Event e WHERE e.status = com.itbulls.nadine.spring.springbootdemo.model.EventStatus.UPCOMING AND e.published = true")
+    List<Event> findUpcomingPublishedEvents();
+
+    @Query("SELECT e FROM Event e WHERE e.id NOT IN (SELECT DISTINCT f.event.id FROM Folder f)")
+    List<Event> findEventsWithoutFolders();
+
+    long count();
 }

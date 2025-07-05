@@ -15,28 +15,30 @@ public class EventStatusScheduler {
     @Autowired
     private EventRepository eventRepository;
 
-    @Scheduled(fixedRate = 60000) // كل دقيقة (أنصح 60000 بدل 6000 حتى ما يكون تحديث كثير متكرر)
+    @Scheduled(fixedRate = 60000)
     public void updateEventStatuses() {
         List<Event> events = eventRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
 
         for (Event event : events) {
-            if ("draft".equals(event.getStatus())) {
-                // لا تغير حالة المسودات
+            if (event.getStatus() == EventStatus.DRAFT
+                || event.getStatus() == EventStatus.CANCELLED
+                || event.getStatus() == EventStatus.ARCHIVED) {
+                // لا تغير حالة المسودات أو الملغية أو المؤرشفة
                 continue;
             }
 
             if (event.getStartDate() != null && event.getEndDate() != null) {
-                String newStatus;
+                EventStatus newStatus;
                 if (event.getStartDate().isAfter(now)) {
-                    newStatus = "upcoming";
+                    newStatus = EventStatus.UPCOMING;
                 } else if (event.getEndDate().isBefore(now)) {
-                    newStatus = "past";
+                    newStatus = EventStatus.PAST;
                 } else {
-                    newStatus = "active";
+                    newStatus = EventStatus.ACTIVE;
                 }
 
-                if (!newStatus.equals(event.getStatus())) {
+                if (newStatus != event.getStatus()) {
                     event.setStatus(newStatus);
                     eventRepository.save(event);
                 }
@@ -44,4 +46,3 @@ public class EventStatusScheduler {
         }
     }
 }
-

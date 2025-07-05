@@ -1,10 +1,13 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
+import com.itbulls.nadine.spring.springbootdemo.dto.CategoryDTO;
 import com.itbulls.nadine.spring.springbootdemo.dto.CheckAvailabilityRequest;
+import com.itbulls.nadine.spring.springbootdemo.dto.EventDTO;
 import com.itbulls.nadine.spring.springbootdemo.dto.EventWithBookingInfoDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.*;
 import com.itbulls.nadine.spring.springbootdemo.repository.*;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
+import com.itbulls.nadine.spring.springbootdemo.service.EmailService;
 import com.itbulls.nadine.spring.springbootdemo.service.EventService;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
 
@@ -46,11 +49,18 @@ public class EventController {
     @Autowired
     private BookingService bookingService;
 
+    private final BookingRepository bookingRepository;
+    private final EmailService emailService;
+
     @Autowired
-    public EventController(EventRepository eventRepository, SeatRepository seatRepository, EventService eventService) {
+    public EventController(EventRepository eventRepository, SeatRepository seatRepository, EventService eventService,  BookingRepository bookingRepository,
+            EmailService emailService)  {
         this.eventRepository = eventRepository;
         this.seatRepository = seatRepository;
         this.eventService = eventService;
+        this.bookingRepository = bookingRepository;
+        this.emailService = emailService;
+    
     }
 
     @GetMapping
@@ -59,6 +69,7 @@ public class EventController {
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+ // ...
     @PostMapping("/upload")
     public ResponseEntity<?> createEvent(
         @RequestParam String title,
@@ -71,17 +82,11 @@ public class EventController {
         @RequestParam(value = "file", required = false) MultipartFile file
     ) {
         try {
-            // ضبط الحالة الافتراضية
-            if (status == null || status.isEmpty()) {
-                status = "draft";
-            }
-
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
 
             LocalDateTime startDateTime = null;
             LocalDateTime endDateTime = null;
 
-            // تحويل التواريخ مع التحقق من عدم فراغها
             if (startDate != null && !startDate.isEmpty()) {
                 startDateTime = LocalDateTime.parse(startDate, formatter);
             }
@@ -89,12 +94,10 @@ public class EventController {
                 endDateTime = LocalDateTime.parse(endDate, formatter);
             }
 
-            // تحقق من صحة التواريخ (اختياري)
             if (startDateTime != null && endDateTime != null && startDateTime.isAfter(endDateTime)) {
                 return ResponseEntity.badRequest().body("Start date must be before end date.");
             }
 
-            // جلب الكاتيجوري واللوكيشن
             Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
             Optional<Location> locationOpt = locationRepository.findById(locationId);
 
@@ -105,13 +108,22 @@ public class EventController {
             Event event = new Event();
             event.setTitle(title);
             event.setDescription(description);
-            event.setStatus(status);
+
+            if (status == null || status.isEmpty()) {
+                event.setStatus(EventStatus.DRAFT);
+            } else {
+                try {
+                    event.setStatus(EventStatus.valueOf(status.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body("Invalid status value.");
+                }
+            }
+
             event.setStartDate(startDateTime);
             event.setEndDate(endDateTime);
             event.setCategory(categoryOpt.get());
             event.setLocation(locationOpt.get());
 
-            // حفظ الصورة لو موجودة
             if (file != null && !file.isEmpty()) {
                 Path uploadDir = Paths.get("uploads");
                 if (!Files.exists(uploadDir)) {
@@ -128,15 +140,15 @@ public class EventController {
             }
 
             Event savedEvent = eventRepository.save(event);
-
             return ResponseEntity.ok(savedEvent);
 
         } catch (Exception e) {
-            e.printStackTrace(); // طباعه مفصّلة للأخطاء في اللوج
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error creating event: " + e.getMessage());
         }
     }
+
 
 
 
@@ -168,7 +180,7 @@ public class EventController {
     
     @GetMapping("/upcoming")
     public ResponseEntity<List<Event>> getUpcomingEvents() {
-        List<Event> upcomingEvents = eventRepository.findByStatusIgnoreCase("upcoming");
+        List<Event> upcomingEvents = eventRepository.findByStatus(EventStatus.UPCOMING);
         return ResponseEntity.ok(upcomingEvents);
     }
 
@@ -213,35 +225,66 @@ public class EventController {
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateEvent(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
-        return eventRepository.findById(id).map(event -> {
-            try {
-                if (updates.containsKey("title")) event.setTitle((String) updates.get("title"));
-                if (updates.containsKey("description")) event.setDescription((String) updates.get("description"));
-                if (updates.containsKey("status")) event.setStatus((String) updates.get("status"));
-                if (updates.containsKey("startDate")) event.setStartDate(LocalDateTime.parse((String) updates.get("startDate")));
-                if (updates.containsKey("endDate")) event.setEndDate(LocalDateTime.parse((String) updates.get("endDate")));
-
-                if (updates.containsKey("category")) {
-                    Map<String, Object> categoryMap = (Map<String, Object>) updates.get("category");
-                    Long categoryId = Long.parseLong(categoryMap.get("id").toString());
-                    categoryRepository.findById(categoryId).ifPresent(event::setCategory);
-                }
-
-                if (updates.containsKey("location")) {
-                    Map<String, Object> locationMap = (Map<String, Object>) updates.get("location");
-                    Long locationId = Long.parseLong(locationMap.get("id").toString());
-                    locationRepository.findById(locationId).ifPresent(event::setLocation);
-                }
-
-                Event updated = eventRepository.save(event);
-                return ResponseEntity.ok(updated);
-
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Error while updating event: " + e.getMessage());
+    public ResponseEntity<?> updateEvent(
+        @PathVariable Long id,
+        @RequestParam String title,
+        @RequestParam String description,
+        @RequestParam Long categoryId,
+        @RequestParam Long locationId,
+        @RequestParam String startDate,
+        @RequestParam String endDate,
+        @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        try {
+            Optional<Event> eventOpt = eventRepository.findById(id);
+            if (!eventOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
             }
-        }).orElse(ResponseEntity.notFound().build());
+            Event event = eventOpt.get();
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+            LocalDateTime startDateTime = LocalDateTime.parse(startDate, formatter);
+            LocalDateTime endDateTime = LocalDateTime.parse(endDate, formatter);
+
+            // تحديث البيانات
+            event.setTitle(title);
+            event.setDescription(description);
+            event.setStartDate(startDateTime);
+            event.setEndDate(endDateTime);
+
+            Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+            Optional<Location> locationOpt = locationRepository.findById(locationId);
+
+            if (!categoryOpt.isPresent() || !locationOpt.isPresent()) {
+                return ResponseEntity.badRequest().body("Category or Location not found");
+            }
+            event.setCategory(categoryOpt.get());
+            event.setLocation(locationOpt.get());
+
+            // تحديث الصورة إذا أرسل ملف
+            if (file != null && !file.isEmpty()) {
+                Path uploadDir = Paths.get("uploads");
+                if (!Files.exists(uploadDir)) {
+                    Files.createDirectories(uploadDir);
+                }
+
+                String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+                Path filePath = uploadDir.resolve(fileName);
+                Files.write(filePath, file.getBytes());
+
+                event.setImageUrl("http://localhost:8081/uploads/" + fileName);
+            }
+
+            Event updated = eventRepository.save(event);
+            return ResponseEntity.ok(updated);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error updating event: " + e.getMessage());
+        }
     }
+
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}/publish")
@@ -252,11 +295,10 @@ public class EventController {
         }
 
         Event event = eventOpt.get();
-        if (!"draft".equals(event.getStatus())) {
+        if (!event.getStatus().equals(EventStatus.DRAFT)) {
             return ResponseEntity.badRequest().body("Only draft events can be published");
         }
 
-        // تحقق من البيانات المطلوبة
         if (event.getTitle() == null || event.getTitle().isEmpty()
             || event.getStartDate() == null
             || event.getEndDate() == null
@@ -268,30 +310,27 @@ public class EventController {
             return ResponseEntity.badRequest().body("Event is incomplete and cannot be published.");
         }
 
-        // ✅ تحديد status حسب التاريخ الحالي
         LocalDateTime now = LocalDateTime.now();
         if (event.getStartDate().isAfter(now)) {
-            event.setStatus("upcoming");
+            event.setStatus(EventStatus.UPCOMING);
         } else if (!event.getEndDate().isBefore(now)) {
-            event.setStatus("active");
+            event.setStatus(EventStatus.ACTIVE);
         } else {
-            event.setStatus("past");
+            event.setStatus(EventStatus.PAST);
         }
 
-        // ✅ جعل isPublished true
         event.setPublished(true);
-
         eventRepository.save(event);
         return ResponseEntity.ok(event);
     }
 
-    @GetMapping("/drafts/old")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    public ResponseEntity<List<Event>> getOldDraftEvents() {
-        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-        List<Event> oldDrafts = eventRepository.findByStatusAndCreatedAtBefore("draft", sevenDaysAgo);
-        return ResponseEntity.ok(oldDrafts);
-    }
+//    @GetMapping("/drafts/old")
+//    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+//    public ResponseEntity<List<Event>> getOldDraftEvents() {
+//        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+//        List<Event> oldDrafts = eventRepository.findByStatusAndCreatedAtBefore("draft", sevenDaysAgo);
+//        return ResponseEntity.ok(oldDrafts);
+//    }
 
 
     @GetMapping("/{eventId}/sections")
@@ -313,27 +352,39 @@ public class EventController {
     }
 
     @GetMapping("/by-status")
-    public ResponseEntity<List<Event>> getEventsByStatus(@RequestParam(required = false) List<String> status) {
-        List<Event> events = (status != null && !status.isEmpty())
-                ? eventRepository.findByStatusInIgnoreCase(status)
-                : eventRepository.findAll();
-        return ResponseEntity.ok(events);
+    public ResponseEntity<List<EventDTO>> getEventsByStatus(@RequestParam(required = false) List<String> status) {
+        List<Event> events;
+        if (status != null && !status.isEmpty()) {
+            List<EventStatus> statuses = status.stream()
+                .map(s -> EventStatus.valueOf(s.toUpperCase()))
+                .collect(Collectors.toList());
+            events = eventRepository.findByStatusIn(statuses);
+        } else {
+            events = eventRepository.findAll();
+        }
+
+        List<EventDTO> eventDTOs = events.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(eventDTOs);
     }
+
 
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<Event>> getEventsByCategory(@PathVariable Long categoryId) {
         List<Event> events = eventRepository.findByCategory_Id(categoryId);
         return events.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(events);
     }
-
     @GetMapping("/count")
     public Map<String, Long> getEventCounts() {
         Map<String, Long> eventCounts = new HashMap<>();
-        eventCounts.put("active", eventRepository.countByStatus("active"));
-        eventCounts.put("draft", eventRepository.countByStatus("draft"));
-        eventCounts.put("past", eventRepository.countByStatus("past"));
+        eventCounts.put("active", eventRepository.countByStatus(EventStatus.ACTIVE));
+        eventCounts.put("draft", eventRepository.countByStatus(EventStatus.DRAFT));
+        eventCounts.put("past", eventRepository.countByStatus(EventStatus.PAST));
         return eventCounts;
     }
+
 
     @GetMapping("/no-folders")
     public List<Event> getEventsWithoutFolders() {
@@ -362,4 +413,64 @@ public class EventController {
         eventService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+    
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelEvent(@PathVariable Long id) {
+        Event event = eventRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        System.out.println("Status before: " + event.getStatus());
+        event.setStatus(EventStatus.CANCELLED);
+        System.out.println("Status after set: " + event.getStatus());
+
+        event.setPublished(false);
+        eventRepository.save(event);
+
+        Event updated = eventRepository.findById(id).orElseThrow();
+        System.out.println("Status after save: " + updated.getStatus());
+
+        return ResponseEntity.ok("Event cancelled successfully and users notified by email.");
+    }
+
+
+    @GetMapping("/{id}/booking-count")
+    public ResponseEntity<Integer> getBookingCount(@PathVariable Long id) {
+        int count = bookingRepository.countByEventId(id);
+        return ResponseEntity.ok(count);
+    }
+
+
+    @PutMapping("/{id}/archive")
+    public ResponseEntity<?> archiveEvent(@PathVariable Long id) {
+        Event event = eventRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        event.setStatus(EventStatus.ARCHIVED);
+        eventRepository.save(event);
+
+        return ResponseEntity.ok("Event archived successfully");
+    }
+
+    
+    private EventDTO convertToDTO(Event event) {
+        Category category = event.getCategory();
+        CategoryDTO categoryDTO = new CategoryDTO(
+            category.getId(),
+            category.getName(),
+            category.getImageUrl()  // ✅ تمرير الصورة كمان
+        );
+
+        return new EventDTO(
+            event.getId(),
+            event.getTitle(),
+            event.getDescription(),
+            event.getStatus().name(), // 🔥 رجع الاسم كنص
+            event.getStartDate(),
+            event.getEndDate(),
+            event.getImageUrl(),
+            categoryDTO
+        );
+    }
+
+
 }

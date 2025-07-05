@@ -21,12 +21,14 @@ public class Event {
     private List<EventImage> images;
 
 
-    @ManyToOne(fetch = FetchType.LAZY) // أو EAGER إذا بدك دايمًا
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    @JsonIgnoreProperties({"events"})
     private Category category;
 
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private EventStatus status;
     
 
 
@@ -52,15 +54,15 @@ public class Event {
 
     @PrePersist
     public void prePersist() {
-        if (this.status == null || this.status.isEmpty()) {
-            this.status = "draft"; // بس إذا مش محدد، حط draft
+        if (this.status == null) {
+            this.status = EventStatus.DRAFT;
         }
     }
 
     @PreUpdate
     public void preUpdate() {
-        if (this.status == null || this.status.isEmpty()) {
-            this.status = "draft"; // بس إذا مش محدد
+        if (this.status == null) {
+            this.status = EventStatus.DRAFT;
         }
     }
 
@@ -103,13 +105,14 @@ public class Event {
         this.category = category;
     }
 
-    public String getStatus() {
+    public EventStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(EventStatus status) {
         this.status = status;
     }
+
 
     public Location getLocation() {
         return location;
