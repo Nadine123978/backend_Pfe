@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.time.LocalDateTime;
 import java.util.List;
 import com.itbulls.nadine.spring.springbootdemo.model.Event;
+import com.itbulls.nadine.spring.springbootdemo.model.EventBookingStats;
 import com.itbulls.nadine.spring.springbootdemo.model.EventStatus;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
@@ -35,6 +36,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("SELECT e FROM Event e WHERE e.id NOT IN (SELECT DISTINCT f.event.id FROM Folder f)")
     List<Event> findEventsWithoutFolders();
+    
+    @Query("SELECT new com.itbulls.nadine.spring.springbootdemo.model.EventBookingStats(e.title, COUNT(b)) " +
+    	       "FROM Event e LEFT JOIN e.bookings b GROUP BY e.title")
+    	List<EventBookingStats> findEventBookingStats();
 
     long count();
 }

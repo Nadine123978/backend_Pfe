@@ -18,6 +18,7 @@ import com.itbulls.nadine.spring.springbootdemo.repository.SeatRepository;
 import com.itbulls.nadine.spring.springbootdemo.repository.UserRepository;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
 import com.itbulls.nadine.spring.springbootdemo.service.EmailService;
+import com.itbulls.nadine.spring.springbootdemo.service.EventService;
 import com.itbulls.nadine.spring.springbootdemo.service.JwtService;
 import com.itbulls.nadine.spring.springbootdemo.service.TicketGeneratorService;
 import com.itbulls.nadine.spring.springbootdemo.service.UserService;
@@ -79,6 +80,10 @@ public class BookingController {
 
     @Autowired
     private EventRepository eventRepository;
+    
+    @Autowired
+    private EventService eventService;
+
 
     @Autowired
     private SeatRepository seatRepository;
@@ -599,6 +604,7 @@ public class BookingController {
 
         return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
     }
+
 }
 
     

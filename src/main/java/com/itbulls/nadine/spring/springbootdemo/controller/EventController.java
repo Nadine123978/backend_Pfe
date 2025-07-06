@@ -471,6 +471,10 @@ public class EventController {
             categoryDTO
         );
     }
-
+    
+    @GetMapping("/events-bookings")
+    public List<EventBookingStats> getEventsBookings() {
+        return eventRepository.findEventBookingStats();
+    }
 
 }
