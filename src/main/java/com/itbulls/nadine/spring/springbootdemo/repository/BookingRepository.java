@@ -44,6 +44,15 @@ boolean existsBySeatsContaining(Seat seat);
     
     List<Booking> findByEventId(Long eventId);
     int countByEventId(Long eventId);
-
+    @Query("SELECT b.event.title, COUNT(b) FROM Booking b GROUP BY b.event.title")
+    List<Object[]> countBookingsGroupedByEvent();
+    @Query("""
+    	    SELECT c.name, COUNT(DISTINCT e.id), COUNT(b)
+    	    FROM Category c
+    	    LEFT JOIN Event e ON e.category = c
+    	    LEFT JOIN Booking b ON b.event = e
+    	    GROUP BY c.name
+    	""")
+    	List<Object[]> countEventsAndBookingsGroupedByCategory();
 
 }

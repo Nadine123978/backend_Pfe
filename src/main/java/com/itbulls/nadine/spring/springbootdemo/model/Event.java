@@ -20,10 +20,9 @@ public class Event {
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EventImage> images;
 
-
     @ManyToOne
     @JoinColumn(name = "category_id")
-    @JsonIgnoreProperties({"events"})
+    @JsonBackReference
     private Category category;
 
 

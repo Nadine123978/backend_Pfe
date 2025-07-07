@@ -4,6 +4,7 @@ import com.itbulls.nadine.spring.springbootdemo.dto.CategoryDTO;
 import com.itbulls.nadine.spring.springbootdemo.dto.CheckAvailabilityRequest;
 import com.itbulls.nadine.spring.springbootdemo.dto.EventDTO;
 import com.itbulls.nadine.spring.springbootdemo.dto.EventWithBookingInfoDTO;
+import com.itbulls.nadine.spring.springbootdemo.dto.LocationDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.*;
 import com.itbulls.nadine.spring.springbootdemo.repository.*;
 import com.itbulls.nadine.spring.springbootdemo.service.BookingService;
@@ -342,14 +343,24 @@ public class EventController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getEventById(@PathVariable Long id) {
         try {
-            Optional<Event> event = eventRepository.findById(id);
-            return event.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+            Optional<Event> eventOpt = eventRepository.findById(id);
+            if (!eventOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+            Event event = eventOpt.get();
+
+            // 🔥 تحويل إلى DTO لإرجاع category أيضًا
+            EventDTO eventDTO = convertToDTO(event);
+
+            return ResponseEntity.ok(eventDTO);
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                  .body("Error occurred: " + e.getMessage());
         }
     }
+
 
     @GetMapping("/by-status")
     public ResponseEntity<List<EventDTO>> getEventsByStatus(@RequestParam(required = false) List<String> status) {
@@ -457,20 +468,28 @@ public class EventController {
         CategoryDTO categoryDTO = new CategoryDTO(
             category.getId(),
             category.getName(),
-            category.getImageUrl()  // ✅ تمرير الصورة كمان
+            category.getImageUrl()
+        );
+
+        Location location = event.getLocation();
+        LocationDTO locationDTO = new LocationDTO(
+            location.getId(),
+            location.getVenueName()
         );
 
         return new EventDTO(
             event.getId(),
             event.getTitle(),
             event.getDescription(),
-            event.getStatus().name(), // 🔥 رجع الاسم كنص
+            event.getStatus().name(),
             event.getStartDate(),
             event.getEndDate(),
             event.getImageUrl(),
-            categoryDTO
+            categoryDTO,
+            locationDTO  // ✅ مرر location هنا
         );
     }
+
     
     @GetMapping("/events-bookings")
     public List<EventBookingStats> getEventsBookings() {

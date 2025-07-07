@@ -17,7 +17,7 @@ public class EventDTO {
 
     public EventDTO(Long id, String title, String description, String status,
                     LocalDateTime startDate, LocalDateTime endDate, String imageUrl,
-                    CategoryDTO category) {
+                    CategoryDTO category , LocationDTO location) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -26,7 +26,20 @@ public class EventDTO {
         this.endDate = endDate;
         this.imageUrl = imageUrl;
         this.category = category;
+        this.location = location;
+
     }
+    
+    private LocationDTO location;
+
+    public LocationDTO getLocation() {
+        return location;
+    }
+
+    public void setLocation(LocationDTO location) {
+        this.location = location;
+    }
+
 
     // Getters & Setters
 

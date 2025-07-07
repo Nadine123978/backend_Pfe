@@ -1,13 +1,19 @@
 package com.itbulls.nadine.spring.springbootdemo.controller;
 
 import com.itbulls.nadine.spring.springbootdemo.dto.AdminStatsDTO;
+import com.itbulls.nadine.spring.springbootdemo.dto.CategoryBookingCountDTO;
+import com.itbulls.nadine.spring.springbootdemo.dto.CategoryEventsBookingsDTO;
+import com.itbulls.nadine.spring.springbootdemo.dto.EventBookingCountDTO;
 import com.itbulls.nadine.spring.springbootdemo.model.BookingStatus;
 import com.itbulls.nadine.spring.springbootdemo.repository.*;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/stats")
+@RequestMapping("/api/admin")
 @CrossOrigin(origins = "*")
 public class AdminStatsController {
 
@@ -29,7 +35,7 @@ public class AdminStatsController {
     @Autowired
     private SubscriberRepository subscriberRepository;
 
-    @GetMapping
+    @GetMapping("/stats")
     public AdminStatsDTO getAdminStats() {
         AdminStatsDTO stats = new AdminStatsDTO();
         stats.setCategoryCount(categoryRepository.count());
@@ -47,4 +53,29 @@ public class AdminStatsController {
 
         return stats;
     }
+    @GetMapping("/bookings-per-event")
+    public List<EventBookingCountDTO> getBookingsPerEvent() {
+        List<Object[]> results = bookingRepository.countBookingsGroupedByEvent();
+
+        return results.stream()
+            .map(r -> new EventBookingCountDTO((String) r[0], (Long) r[1]))
+            .toList();
+    }
+    
+    @GetMapping("/events-and-bookings-per-category")
+    public List<CategoryEventsBookingsDTO> getEventsAndBookingsPerCategory() {
+        List<Object[]> results = bookingRepository.countEventsAndBookingsGroupedByCategory();
+
+        return results.stream()
+            .map(r -> new CategoryEventsBookingsDTO(
+                (String) r[0],
+                ((Long) r[1]).intValue(),
+                ((Long) r[2]).intValue()
+            ))
+            .toList();
+    }
+
+
+
+    
 }
